@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buku Catatan Fisika</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#F6F0E4;
+    --paper-line:#DDD2B8;
+    --ink:#1F2A44;
+    --ink-soft:#4A5568;
+    --accent:#B5502E;
+    --accent-soft:#E8C9B0;
+    --margin-red:#C1524A;
+    --card-shadow: 2px 3px 0 rgba(31,42,68,0.08);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 31px, var(--paper-line) 32px);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    min-height:100vh;
+  }
+
+  .margin-rule{
+    position:fixed;
+    top:0; bottom:0; left:64px;
+    width:1px;
+    background:var(--margin-red);
+    opacity:0.35;
+    z-index:0;
+  }
+  @media (max-width:700px){ .margin-rule{ left:28px; } }
+
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:48px 24px 80px 84px;
+    position:relative;
+    z-index:1;
+  }
+  @media (max-width:700px){ .wrap{ padding:32px 16px 60px 44px; } }
+
+  header{ margin-bottom:36px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 6px 0;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(32px,5vw,48px);
+    margin:0 0 8px 0;
+    line-height:1.05;
+  }
+  header p{
+    color:var(--ink-soft);
+    font-size:15px;
+    max-width:56ch;
+    margin:0;
+  }
+
+  .index{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:28px 0 40px 0;
+  }
+  .index button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background:#fff;
+    border:1px solid var(--paper-line);
+    box-shadow:var(--card-shadow);
+    padding:8px 14px;
+    cursor:pointer;
+    color:var(--ink);
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  .index button:hover{ transform:translateY(-2px); border-color:var(--accent); }
+  .index button.active{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+
+  .lesson-card{
+    background:#fffdf8;
+    border:1px solid var(--paper-line);
+    box-shadow:var(--card-shadow);
+    padding:28px 32px;
+    margin-bottom:40px;
+  }
+  .lesson-card .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+  }
+  .lesson-card h2{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:6px 0 14px 0;
+  }
+  .lesson-card p{
+    line-height:1.7;
+    color:var(--ink);
+    margin:0 0 12px 0;
+    font-size:15.5px;
+  }
+  .formula{
+    font-family:'IBM Plex Mono', monospace;
+    background:var(--paper);
+    border-left:3px solid var(--accent);
+    padding:10px 14px;
+    margin:14px 0;
+    font-size:14px;
+    color:var(--ink);
+  }
+  .lesson-card ul{ margin:8px 0 0 0; padding-left:20px; color:var(--ink); font-size:15px; line-height:1.7;}
+
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:56px 0 28px 0;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+  }
+  .divider::after{ content:""; flex:1; height:1px; background:var(--paper-line); }
+
+  .chat-box{
+    background:#fffdf8;
+    border:1px solid var(--paper-line);
+    box-shadow:var(--card-shadow);
+  }
+  .chat-header{
+    padding:16px 20px;
+    border-bottom:1px solid var(--paper-line);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+  }
+  .chat-header h3{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    margin:0;
+  }
+  .chat-header span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .chat-log{
+    padding:20px;
+    min-height:140px;
+    max-height:420px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .msg{ font-size:14.5px; line-height:1.6; max-width:88%; }
+  .msg.user{
+    align-self:flex-end;
+    background:var(--ink);
+    color:var(--paper);
+    padding:10px 14px;
+  }
+  .msg.ai{
+    align-self:flex-start;
+    color:var(--ink);
+    padding:10px 14px;
+    background:var(--paper);
+    border-left:3px solid var(--accent);
+  }
+  .msg.ai .cite{
+    display:block;
+    margin-top:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--accent);
+  }
+  .msg-meta{
+    align-self:flex-start;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    padding:0 14px;
+    margin-top:-8px;
+  }
+  .msg-meta b{ color:var(--ink); }
+  .chat-empty{
+    color:var(--ink-soft);
+    font-size:14px;
+    font-style:italic;
+  }
+  .chat-input-row{
+    display:flex;
+    border-top:1px solid var(--paper-line);
+  }
+  .chat-input-row input{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:14px 20px;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    outline:none;
+  }
+  .chat-input-row button{
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    padding:0 24px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    cursor:pointer;
+    letter-spacing:0.03em;
+  }
+  .chat-input-row button:disabled{ opacity:0.5; cursor:default; }
+  .chat-input-row button:hover:not(:disabled){ background:#9c4225; }
+
+  .suggest-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    padding:0 20px 16px 20px;
+  }
+  .suggest-row button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    background:transparent;
+    border:1px dashed var(--paper-line);
+    padding:6px 10px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .suggest-row button:hover{ border-color:var(--accent); color:var(--accent); }
+
+  .footnote{
+    margin-top:14px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  /* === Mode toggle & AI Lokal (WebLLM) === */
+  .mode-toggle{
+    display:flex;
+    gap:6px;
+  }
+  .mode-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.03em;
+    background:transparent;
+    border:1px solid var(--paper-line);
+    padding:6px 10px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .mode-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+  .mode-btn:hover:not(.active){ border-color:var(--accent); color:var(--accent); }
+
+  .ai-panel{
+    padding:18px 20px;
+    border-bottom:1px solid var(--paper-line);
+    background:var(--paper);
+  }
+  .ai-panel p{
+    margin:0 0 12px 0;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--ink-soft);
+  }
+  .ai-panel .ai-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .ai-panel select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    padding:8px 10px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+    color:var(--ink);
+  }
+  .ai-panel .btn-load{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    cursor:pointer;
+  }
+  .ai-panel .btn-load:hover:not(:disabled){ background:#9c4225; }
+  .ai-panel .btn-load:disabled{ opacity:0.5; cursor:default; }
+  .progress-wrap{
+    margin-top:12px;
+    display:none;
+  }
+  .progress-wrap.show{ display:block; }
+  .progress-track{
+    height:6px;
+    width:100%;
+    background:var(--paper-line);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width .15s ease;
+  }
+  .progress-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .ai-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--accent);
+    border:1px solid var(--accent-soft);
+    padding:2px 8px;
+    margin-left:8px;
+  }
+</style>
+</head>
+<body>
+<div class="margin-rule"></div>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Modul Belajar Mandiri</p>
+    <h1>Buku Catatan Fisika</h1>
+    <p>15 topik dasar fisika SMA, ditulis singkat dan padat. Gulir ke bawah untuk membaca, atau tanya di kotak bagian akhir — pilih mode <b>Kata Kunci</b> (instan, murni pencocokan kata) atau <b>AI Lokal</b> (model bahasa kecil yang berjalan langsung di browser Anda via WebLLM, gratis, tanpa API key, tanpa server).</p>
+  </header>
+
+  <nav class="index" id="index"></nav>
+
+  <div id="lessons"></div>
+
+  <div class="divider">Cari di Catatan</div>
+
+  <div class="chat-box">
+    <div class="chat-header">
+      <h3 id="chat-title">Pencari Kata Kunci</h3>
+      <div style="display:flex; align-items:center;">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-keyword">Kata Kunci</button>
+          <button class="mode-btn" id="mode-ai">AI Lokal</button>
+        </div>
+        <span id="chat-status" style="margin-left:10px;">siap</span>
+      </div>
+    </div>
+
+    <div class="ai-panel" id="ai-panel" style="display:none;">
+      <p>Model bahasa kecil akan diunduh dan dijalankan <b>langsung di browser Anda</b> lewat WebLLM + WebGPU — bukan lewat server, tidak butuh API key, gratis sepenuhnya. Unduhan sekali saja lalu di-cache; setelah itu muat ulang jauh lebih cepat, bahkan bisa offline.</p>
+      <div class="ai-row">
+        <select id="model-select">
+          <option value="Qwen2.5-0.5B-Instruct-q4f16_1-MLC">Ringan · Qwen2.5 0.5B (~400MB, lebih cepat, jawaban lebih sederhana)</option>
+          <option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC" selected>Seimbang · Qwen2.5 1.5B (~1GB, lebih pintar & natural, unduhan lebih lama)</option>
+        </select>
+        <button class="btn-load" id="btn-load-model">Muat Model</button>
+      </div>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-label" id="progress-label">Bersiap mengunduh…</div>
+      </div>
+    </div>
+
+    <div class="chat-log" id="chat-log">
+      <div class="chat-empty">Contoh: "kecepatan dan percepatan" atau "gaya Coulomb". Mode Kata Kunci mencocokkan istilah fisika secara instan; mode AI Lokal bisa menjawab pertanyaan berkalimat lebih bebas setelah modelnya dimuat.</div>
+    </div>
+    <div class="suggest-row" id="suggest-row"></div>
+    <div class="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Ketik istilah fisika yang ingin dicari..." />
+      <button id="chat-send">Cari</button>
+    </div>
+  </div>
+  <p class="footnote" id="footnote">Mode Kata Kunci 100% lokal di browser — tidak ada AI, tidak ada API, tidak ada data terkirim ke server mana pun. Mode AI Lokal mengunduh model sekali dari CDN publik lalu semua percakapan berikutnya diproses di GPU perangkat Anda sendiri — tetap gratis, tanpa token, tanpa pembayaran.</p>
+
+</div>
+
+<script>
+const LESSONS = [
+  {
+    id: "kinematika",
+    tag: "Mekanika · Bab 1",
+    title: "Kinematika Gerak Lurus",
+    body: `Kinematika mempelajari gerak benda tanpa memandang penyebabnya. Tiga besaran utamanya: posisi (x), kecepatan (v), dan percepatan (a). Kecepatan adalah laju perubahan posisi terhadap waktu; percepatan adalah laju perubahan kecepatan terhadap waktu.
+
+Pada Gerak Lurus Beraturan (GLB), kecepatan konstan sehingga tidak ada percepatan. Pada Gerak Lurus Berubah Beraturan (GLBB), percepatan konstan — inilah yang terjadi misalnya saat benda jatuh bebas (a = g = 9,8 m/s²).`,
+    formula: "GLB:  x = x₀ + v·t\nGLBB: v = v₀ + a·t\n      x = x₀ + v₀t + ½at²\n      v² = v₀² + 2a(x − x₀)",
+    points: [
+      "Kecepatan itu vektor (punya arah), kelajuan hanya besarnya.",
+      "Percepatan negatif = perlambatan, bukan berarti bergerak mundur."
+    ]
+  },
+  {
+    id: "newton",
+    tag: "Mekanika · Bab 2",
+    title: "Hukum Newton",
+    body: `Tiga hukum Newton menjelaskan hubungan antara gaya dan gerak. Hukum I (kelembaman): benda diam tetap diam, benda bergerak tetap bergerak lurus beraturan, selama tidak ada gaya total (resultan) yang bekerja padanya.
+
+Hukum II menyatakan percepatan sebanding dengan gaya total dan berbanding terbalik dengan massa. Hukum III: setiap aksi menghasilkan reaksi yang besarnya sama namun arahnya berlawanan, dan bekerja pada dua benda berbeda.`,
+    formula: "Hukum I:  ΣF = 0  →  a = 0\nHukum II: ΣF = m·a\nHukum III: F(aksi) = −F(reaksi)",
+    points: [
+      "Gaya gesek, gaya normal, dan berat adalah gaya nyata yang sering dipadukan dalam soal.",
+      "Aksi-reaksi bekerja pada benda berbeda, jadi tidak saling meniadakan."
+    ]
+  },
+  {
+    id: "usaha-energi",
+    tag: "Mekanika · Bab 3",
+    title: "Usaha dan Energi",
+    body: `Usaha (W) terjadi ketika gaya menyebabkan perpindahan pada benda. Energi kinetik adalah energi akibat gerak, sedangkan energi potensial gravitasi adalah energi akibat posisi terhadap acuan tertentu.
+
+Hukum kekekalan energi mekanik menyatakan bahwa total energi kinetik dan potensial tetap konstan pada sistem tanpa gesekan — energi hanya berpindah bentuk, bukan hilang.`,
+    formula: "W = F·s·cosθ\nEk = ½mv²\nEp = mgh\nEm = Ek + Ep (konstan tanpa gesekan)",
+    points: [
+      "Saat benda jatuh bebas, energi potensial berkurang persis sebesar energi kinetik yang bertambah.",
+      "Usaha bernilai nol jika gaya tegak lurus arah perpindahan."
+    ]
+  },
+  {
+    id: "listrik-statis",
+    tag: "Listrik · Bab 1",
+    title: "Listrik Statis",
+    body: `Listrik statis membahas muatan listrik yang diam. Dua muatan sejenis akan tolak-menolak, dua muatan berlawanan jenis akan tarik-menarik. Besarnya gaya antar muatan diatur oleh Hukum Coulomb, yang bentuknya mirip hukum gravitasi Newton tapi untuk muatan listrik.
+
+Di sekitar muatan terdapat medan listrik, yaitu daerah di mana muatan lain akan merasakan gaya. Semakin jauh dari sumber muatan, medan listrik semakin lemah.`,
+    formula: "F = k·(q₁·q₂)/r²   (k ≈ 9×10⁹ N·m²/C²)\nE = F/q = k·Q/r²",
+    points: [
+      "Gaya Coulomb berbanding terbalik dengan kuadrat jarak — jarak dua kali lipat, gaya menjadi seperempat.",
+      "Medan listrik adalah besaran vektor, arahnya menjauhi muatan positif dan menuju muatan negatif."
+    ]
+  },
+  {
+    id: "gerak-melingkar",
+    tag: "Mekanika · Bab 4",
+    title: "Gerak Melingkar",
+    body: `Gerak melingkar beraturan (GMB) terjadi saat benda bergerak dengan kelajuan tetap mengelilingi lintasan berbentuk lingkaran. Meskipun kelajuannya konstan, arah kecepatan terus berubah, sehingga tetap ada percepatan yang disebut percepatan sentripetal — arahnya selalu menuju pusat lingkaran.
+
+Gaya yang menyebabkan percepatan sentripetal disebut gaya sentripetal. Contohnya tegangan tali pada bola yang diputar, atau gaya gravitasi yang menjaga bulan mengorbit bumi.`,
+    formula: "v = ω·r\na_s = v²/r = ω²·r\nF_s = m·v²/r",
+    points: [
+      "Gaya sentripetal bukan jenis gaya baru — ia adalah nama untuk gaya total yang mengarah ke pusat.",
+      "Periode (T) adalah waktu satu putaran penuh; frekuensi (f) = 1/T."
+    ]
+  },
+  {
+    id: "momentum",
+    tag: "Mekanika · Bab 5",
+    title: "Momentum dan Tumbukan",
+    body: `Momentum adalah ukuran "kesulitan menghentikan" benda yang bergerak, dipengaruhi oleh massa dan kecepatan. Hukum kekekalan momentum menyatakan total momentum sistem sebelum dan sesudah tumbukan selalu sama, selama tidak ada gaya luar yang bekerja.
+
+Tumbukan dibagi menjadi lenting sempurna (energi kinetik kekal, misalnya bola biliar ideal), lenting sebagian (energi kinetik berkurang sedikit), dan tidak lenting sama sekali (dua benda menyatu setelah tumbukan, seperti mobil menabrak lalu saling menempel).`,
+    formula: "p = m·v\nHukum Kekekalan: p₁ + p₂ (sebelum) = p₁' + p₂' (sesudah)\nImpuls: I = F·Δt = Δp",
+    points: [
+      "Pada tumbukan tidak lenting sama sekali, kedua benda bergerak bersama dengan kecepatan akhir yang sama.",
+      "Momentum selalu kekal dalam sistem tertutup, tapi energi kinetik hanya kekal pada tumbukan lenting sempurna."
+    ]
+  },
+  {
+    id: "getaran-gelombang",
+    tag: "Getaran & Gelombang · Bab 1",
+    title: "Getaran dan Gelombang",
+    body: `Getaran adalah gerak bolak-balik di sekitar titik seimbang, contohnya bandul atau pegas. Gelombang adalah rambatan getaran yang membawa energi tanpa memindahkan materi secara permanen. Gelombang dibedakan menjadi gelombang mekanik (butuh medium, contoh: gelombang tali) dan gelombang elektromagnetik (tidak butuh medium, contoh: cahaya).
+
+Berdasarkan arah getarnya, ada gelombang transversal (arah getar tegak lurus arah rambat, contoh: gelombang tali) dan gelombang longitudinal (arah getar sejajar arah rambat, contoh: gelombang bunyi).`,
+    formula: "T = 1/f\nv = λ·f\nPeriode pegas: T = 2π√(m/k)\nPeriode bandul: T = 2π√(L/g)",
+    points: [
+      "Amplitudo menentukan energi gelombang, bukan kecepatan rambatnya.",
+      "Panjang gelombang (λ) adalah jarak satu siklus penuh — dari puncak ke puncak berikutnya."
+    ]
+  },
+  {
+    id: "gelombang-bunyi",
+    tag: "Getaran & Gelombang · Bab 2",
+    title: "Gelombang Bunyi",
+    body: `Bunyi adalah gelombang longitudinal yang merambat melalui medium (udara, air, atau benda padat) dan tidak dapat merambat di ruang hampa. Cepat rambat bunyi berbeda-beda tergantung mediumnya — paling cepat di zat padat, lalu zat cair, dan paling lambat di gas.
+
+Efek Doppler menjelaskan perubahan frekuensi bunyi yang didengar akibat gerak relatif antara sumber bunyi dan pendengar — misalnya sirine ambulans terdengar lebih tinggi saat mendekat dan lebih rendah saat menjauh.`,
+    formula: "v = λ·f\nEfek Doppler: f_p = f_s · (v ± v_p)/(v ± v_s)",
+    points: [
+      "Telinga manusia hanya mendengar frekuensi 20 Hz–20.000 Hz (rentang audiosonik).",
+      "Di atas 20.000 Hz disebut ultrasonik (dipakai kelelawar & USG), di bawah 20 Hz disebut infrasonik."
+    ]
+  },
+  {
+    id: "optik-geometri",
+    tag: "Optik · Bab 1",
+    title: "Optik Geometri (Cermin dan Lensa)",
+    body: `Optik geometri mempelajari pembentukan bayangan oleh cermin dan lensa menggunakan garis lurus (sinar cahaya). Cermin cekung dan lensa cembung bersifat mengumpulkan cahaya (konvergen), sedangkan cermin cembung dan lensa cekung bersifat menyebarkan cahaya (divergen).
+
+Sifat bayangan (nyata/maya, tegak/terbalik, diperbesar/diperkecil) bergantung pada posisi benda relatif terhadap titik fokus. Rumus umum cermin dan lensa tipis sebenarnya identik.`,
+    formula: "1/f = 1/s + 1/s'\nM = s'/s = h'/h\nKekuatan lensa: P = 1/f (satuan dioptri, f dalam meter)",
+    points: [
+      "Bayangan nyata terbentuk dari perpotongan sinar sungguhan, bisa ditangkap layar; bayangan maya tidak.",
+      "Jarak bayangan (s') bertanda negatif berarti bayangan maya, terletak di sisi yang sama dengan benda."
+    ]
+  },
+  {
+    id: "suhu-kalor",
+    tag: "Termodinamika · Bab 1",
+    title: "Suhu dan Kalor",
+    body: `Suhu adalah ukuran derajat panas suatu benda, sedangkan kalor adalah energi yang berpindah akibat perbedaan suhu — mengalir dari benda bersuhu tinggi ke benda bersuhu rendah hingga tercapai kesetimbangan termal.
+
+Kalor dapat menyebabkan dua hal: perubahan suhu (dihitung dengan kalor jenis) atau perubahan wujud zat tanpa perubahan suhu (dihitung dengan kalor laten), misalnya es mencair pada suhu tetap 0°C selama proses peleburan berlangsung.`,
+    formula: "Q = m·c·ΔT  (perubahan suhu)\nQ = m·L  (perubahan wujud, L = kalor laten)\nAsas Black: Q lepas = Q terima",
+    points: [
+      "Kalor jenis (c) berbeda tiap zat — air punya kalor jenis tinggi, sehingga lambat panas dan lambat dingin.",
+      "Selama perubahan wujud berlangsung, suhu zat tetap konstan meski kalor terus diberikan."
+    ]
+  },
+  {
+    id: "termodinamika",
+    tag: "Termodinamika · Bab 2",
+    title: "Hukum I Termodinamika",
+    body: `Hukum I Termodinamika adalah bentuk kekekalan energi untuk sistem gas: kalor yang diberikan ke sistem akan digunakan untuk menaikkan energi dalam sistem dan/atau melakukan usaha oleh sistem terhadap lingkungan.
+
+Ada empat proses gas ideal yang umum dibahas: isobarik (tekanan tetap), isokhorik (volume tetap, sehingga gas tidak melakukan usaha), isotermal (suhu tetap, energi dalam tidak berubah), dan adiabatik (tanpa pertukaran kalor dengan lingkungan).`,
+    formula: "Q = ΔU + W\nIsobarik: W = P·ΔV\nIsokhorik: W = 0\nIsotermal: ΔU = 0, sehingga Q = W",
+    points: [
+      "Energi dalam (U) gas ideal hanya bergantung pada suhu, bukan tekanan atau volume.",
+      "Pada proses isokhorik, seluruh kalor yang masuk digunakan untuk menaikkan energi dalam."
+    ]
+  },
+  {
+    id: "fluida-statis",
+    tag: "Fluida · Bab 1",
+    title: "Fluida Statis",
+    body: `Fluida statis membahas fluida (zat cair dan gas) yang diam. Tekanan hidrostatis adalah tekanan akibat berat kolom fluida di atas suatu titik, semakin dalam suatu titik semakin besar tekanannya. Hukum Pascal menyatakan tekanan yang diberikan pada fluida tertutup diteruskan sama besar ke segala arah — prinsip ini dipakai pada dongkrak hidrolik.
+
+Hukum Archimedes menjelaskan gaya apung: benda yang dicelupkan ke fluida akan mendapat gaya ke atas sebesar berat fluida yang dipindahkan, inilah sebabnya kapal besi bisa mengapung.`,
+    formula: "P_hidrostatis = ρ·g·h\nHukum Pascal: F₁/A₁ = F₂/A₂\nGaya Archimedes: F_A = ρ_fluida·g·V_terendam",
+    points: [
+      "Benda mengapung jika massa jenisnya lebih kecil dari massa jenis fluida, tenggelam jika lebih besar.",
+      "Dongkrak hidrolik memperbesar gaya dengan memperbesar luas penampang piston keluaran."
+    ]
+  },
+  {
+    id: "fluida-dinamis",
+    tag: "Fluida · Bab 2",
+    title: "Fluida Dinamis",
+    body: `Fluida dinamis membahas fluida yang mengalir, dengan asumsi aliran tunak (steady), tak termampatkan, dan tanpa gesekan (ideal). Asas kontinuitas menyatakan debit fluida di sepanjang pipa selalu sama — jika penampang pipa menyempit, kecepatan aliran otomatis bertambah.
+
+Asas Bernoulli menghubungkan tekanan, kecepatan, dan ketinggian fluida: pada pipa mendatar, bagian yang alirannya lebih cepat memiliki tekanan lebih rendah. Prinsip ini menjelaskan gaya angkat pada sayap pesawat.`,
+    formula: "Kontinuitas: A₁v₁ = A₂v₂\nBernoulli: P + ½ρv² + ρgh = konstan",
+    points: [
+      "Pipa yang menyempit membuat fluida mengalir lebih cepat, bukan lebih lambat.",
+      "Tekanan tinggi terjadi di tempat kecepatan aliran rendah, dan sebaliknya."
+    ]
+  },
+  {
+    id: "listrik-dinamis",
+    tag: "Listrik · Bab 2",
+    title: "Listrik Dinamis (Arus Searah)",
+    body: `Listrik dinamis membahas muatan listrik yang mengalir, membentuk arus listrik. Arus mengalir karena adanya beda potensial (tegangan) yang didorong oleh sumber seperti baterai. Hukum Ohm menghubungkan tegangan, arus, dan hambatan pada suatu penghantar.
+
+Rangkaian resistor dapat disusun seri (arus sama di semua komponen, tegangan terbagi) atau paralel (tegangan sama di semua cabang, arus terbagi). Susunan ini menentukan bagaimana energi listrik didistribusikan dalam rangkaian.`,
+    formula: "V = I·R\nSeri: R_total = R₁ + R₂ + ...\nParalel: 1/R_total = 1/R₁ + 1/R₂ + ...\nDaya: P = V·I = I²R",
+    points: [
+      "Pada rangkaian seri, jika satu komponen putus maka seluruh rangkaian mati.",
+      "Pada rangkaian paralel, setiap cabang tetap menyala meski salah satu cabang lain putus."
+    ]
+  },
+  {
+    id: "medan-magnet",
+    tag: "Listrik · Bab 3",
+    title: "Medan Magnet",
+    body: `Medan magnet adalah daerah di sekitar magnet atau kawat berarus listrik yang dapat memberikan gaya pada muatan bergerak atau magnet lain. Kawat berarus listrik menghasilkan medan magnet di sekitarnya, sesuai kaidah tangan kanan — inilah dasar cara kerja elektromagnet.
+
+Ketika muatan bergerak berada dalam medan magnet, ia mengalami gaya Lorentz yang arahnya tegak lurus terhadap kecepatan muatan dan medan magnet sekaligus. Prinsip ini digunakan pada motor listrik untuk mengubah energi listrik menjadi gerak.`,
+    formula: "B (kawat lurus) = μ₀I/(2πa)\nGaya Lorentz: F = q·v·B·sinθ\nGaya pada kawat berarus: F = B·I·L·sinθ",
+    points: [
+      "Arah gaya Lorentz ditentukan dengan kaidah tangan kanan, tegak lurus terhadap v dan B.",
+      "Semakin besar arus atau semakin dekat jarak ke kawat, semakin kuat medan magnet yang dihasilkan."
+    ]
+  }
+];
+
+const indexEl = document.getElementById('index');
+const lessonsEl = document.getElementById('lessons');
+
+LESSONS.forEach((l, i) => {
+  const btn = document.createElement('button');
+  btn.textContent = (i+1) + '. ' + l.title;
+  btn.dataset.id = l.id;
+  btn.onclick = () => {
+    document.getElementById('card-' + l.id).scrollIntoView({behavior:'smooth', block:'start'});
+  };
+  indexEl.appendChild(btn);
+
+  const card = document.createElement('div');
+  card.className = 'lesson-card';
+  card.id = 'card-' + l.id;
+  card.innerHTML = `
+    <div class="tag">${l.tag}</div>
+    <h2>${l.title}</h2>
+    ${l.body.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+    <div class="formula">${l.formula.replace(/\n/g,'<br>')}</div>
+    <ul>${l.points.map(p => `<li>${p}</li>`).join('')}</ul>
+  `;
+  lessonsEl.appendChild(card);
+});
+
+// === MESIN PENCARIAN KATA KUNCI (tanpa AI, tanpa API) ===
+// Memecah semua materi menjadi kumpulan kalimat yang bisa dicocokkan kata per kata.
+const STOPWORDS = new Set([
+  "apa","apakah","adalah","yang","dan","atau","dengan","untuk","dari","ke","ini","itu",
+  "pada","saat","kapan","kenapa","mengapa","bagaimana","gimana","cara","tolong","coba",
+  "jelaskan","bisa","dapat","kalau","jika","tentang","soal","dalam","juga","saja","tidak",
+  "bukan","antara","apa2","nya","dong","sih","ya","deh","kok","bagai","seperti","contoh",
+  "contohnya","berapa","dimana","siapa","akan","sudah","belum","masih","lagi","aja"
+]);
+
+function tokenize(text) {
+  return text.toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOPWORDS.has(w));
+}
+
+// Indeks kalimat: setiap kalimat dari body + poin penting dicatat bersama sumbernya
+const SENTENCE_INDEX = [];
+LESSONS.forEach(l => {
+  const rawSentences = l.body.split(/\n\n/).join(' ').split(/(?<=[.!?])\s+/);
+  rawSentences.forEach(s => {
+    if (s.trim().length > 0) {
+      SENTENCE_INDEX.push({ lessonId: l.id, lessonTitle: l.title, tag: l.tag, text: s.trim(), tokens: tokenize(s) });
+    }
+  });
+  l.points.forEach(p => {
+    SENTENCE_INDEX.push({ lessonId: l.id, lessonTitle: l.title, tag: l.tag, text: p.trim(), tokens: tokenize(p) });
+  });
+});
+
+// Mencari kalimat paling relevan berdasarkan jumlah kata kunci yang cocok
+function searchAnswer(query) {
+  const qTokens = [...new Set(tokenize(query))];
+  if (qTokens.length === 0) {
+    return { matched: false, matchedKeywords: [], answer: "Pertanyaannya terlalu umum, coba sebutkan istilah fisika yang lebih spesifik (misal: \"gaya sentripetal\" atau \"hukum ohm\").", source: null };
+  }
+
+  const scored = SENTENCE_INDEX.map(entry => {
+    const hits = qTokens.filter(t => entry.tokens.includes(t));
+    return { entry, score: hits.length, hits };
+  }).filter(x => x.score > 0);
+
+  if (scored.length === 0) {
+    return { matched: false, matchedKeywords: [], answer: "Topik itu belum ada di 15 catatan yang tersedia. Coba tanyakan salah satu topik pada daftar di atas.", source: null };
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  const topLessonId = scored[0].entry.lessonId;
+
+  // Ambil hingga 3 kalimat teratas dari materi yang sama dengan kalimat skor tertinggi
+  const picked = [];
+  const seenText = new Set();
+  const allMatchedKeywords = new Set();
+  for (const item of scored) {
+    if (item.entry.lessonId !== topLessonId) continue;
+    if (seenText.has(item.entry.text)) continue;
+    picked.push(item.entry.text);
+    seenText.add(item.entry.text);
+    item.hits.forEach(h => allMatchedKeywords.add(h));
+    if (picked.length >= 3) break;
+  }
+
+  const topEntry = scored[0].entry;
+  return {
+    matched: true,
+    matchedKeywords: [...allMatchedKeywords],
+    answer: picked.join(' '),
+    source: topEntry.lessonTitle
+  };
+}
+
+// Suggested questions
+const SUGGESTIONS = [
+  "percepatan sentripetal",
+  "hukum kekekalan momentum",
+  "energi mekanik",
+  "gaya Coulomb"
+];
+const suggestRow = document.getElementById('suggest-row');
+SUGGESTIONS.forEach(q => {
+  const b = document.createElement('button');
+  b.textContent = q;
+  b.onclick = () => { document.getElementById('chat-input').value = q; sendMessage(); };
+  suggestRow.appendChild(b);
+});
+
+const chatLog = document.getElementById('chat-log');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
+const chatStatus = document.getElementById('chat-status');
+const chatTitle = document.getElementById('chat-title');
+const footnote = document.getElementById('footnote');
+const modeKeywordBtn = document.getElementById('mode-keyword');
+const modeAiBtn = document.getElementById('mode-ai');
+const aiPanel = document.getElementById('ai-panel');
+const modelSelect = document.getElementById('model-select');
+const btnLoadModel = document.getElementById('btn-load-model');
+const progressWrap = document.getElementById('progress-wrap');
+const progressFill = document.getElementById('progress-fill');
+const progressLabel = document.getElementById('progress-label');
+
+let firstMessage = true;
+let mode = 'keyword';      // 'keyword' | 'ai'
+let aiEngine = null;       // instance MLCEngine setelah dimuat
+let aiLoading = false;
+let loadedModelId = null;
+
+// === MODE TOGGLE ===
+modeKeywordBtn.onclick = () => {
+  mode = 'keyword';
+  modeKeywordBtn.classList.add('active');
+  modeAiBtn.classList.remove('active');
+  aiPanel.style.display = 'none';
+  chatTitle.textContent = 'Pencari Kata Kunci';
+  chatStatus.textContent = 'siap';
+  chatInput.placeholder = 'Ketik istilah fisika yang ingin dicari...';
+};
+
+modeAiBtn.onclick = () => {
+  if (!('gpu' in navigator)) {
+    addMeta('Browser ini tidak mendukung <b>WebGPU</b>, jadi AI Lokal tidak bisa jalan di sini. Coba buka dengan Chrome/Edge versi terbaru di desktop atau Android. Mode Kata Kunci tetap bisa dipakai seperti biasa.');
+    return;
+  }
+  mode = 'ai';
+  modeAiBtn.classList.add('active');
+  modeKeywordBtn.classList.remove('active');
+  chatTitle.textContent = 'Tanya AI Lokal';
+  chatInput.placeholder = 'Tanyakan apa saja soal materi di atas...';
+  if (!aiEngine) {
+    aiPanel.style.display = 'block';
+    chatStatus.textContent = 'model belum dimuat';
+  } else {
+    chatStatus.textContent = 'siap (' + loadedModelId + ')';
+  }
+};
+
+// === MEMUAT MODEL WEBLLM ===
+btnLoadModel.onclick = async () => {
+  if (aiLoading) return;
+  aiLoading = true;
+  btnLoadModel.disabled = true;
+  modelSelect.disabled = true;
+  progressWrap.classList.add('show');
+  chatStatus.textContent = 'mengunduh model...';
+  const modelId = modelSelect.value;
+
+  try {
+    // Impor WebLLM langsung dari CDN — tanpa perlu npm install atau build tool.
+    const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+
+    aiEngine = await webllm.CreateMLCEngine(modelId, {
+      initProgressCallback: (report) => {
+        const pct = Math.round((report.progress || 0) * 100);
+        progressFill.style.width = pct + '%';
+        progressLabel.textContent = report.text || (pct + '%');
+      }
+    });
+
+    loadedModelId = modelId;
+    chatStatus.textContent = 'siap (' + modelId + ')';
+    progressLabel.textContent = 'Model siap. Percakapan berikutnya diproses langsung di perangkat Anda.';
+    aiPanel.style.display = 'none';
+    addMeta('Model AI Lokal <b>' + modelId + '</b> sudah dimuat dan siap dipakai. Semua jawaban sekarang diproses di browser Anda sendiri, tanpa server.');
+  } catch (err) {
+    console.error(err);
+    chatStatus.textContent = 'gagal memuat model';
+    progressLabel.textContent = 'Gagal memuat model: ' + (err && err.message ? err.message : err);
+    btnLoadModel.disabled = false;
+    modelSelect.disabled = false;
+  } finally {
+    aiLoading = false;
+  }
+};
+
+function addMsg(role, text) {
+  if (firstMessage) {
+    chatLog.innerHTML = '';
+    firstMessage = false;
+  }
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return div;
+}
+
+function addMeta(html) {
+  const div = document.createElement('div');
+  div.className = 'msg-meta';
+  div.innerHTML = html;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return div;
+}
+
+// Menghitung jumlah kalimat dari sebuah teks (pisah berdasarkan . ! ?)
+function countSentences(text) {
+  const cleaned = text.trim();
+  if (!cleaned) return 0;
+  const parts = cleaned.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
+  return parts.length;
+}
+
+// Cari materi paling relevan untuk dijadikan konteks jawaban AI (RAG sederhana,
+// tetap lokal — hanya dipakai untuk menyusun prompt, bukan memanggil server).
+function getRelevantLesson(query) {
+  const qTokens = [...new Set(tokenize(query))];
+  if (qTokens.length === 0) return null;
+  const scored = SENTENCE_INDEX
+    .map(entry => ({ entry, score: qTokens.filter(t => entry.tokens.includes(t)).length }))
+    .filter(x => x.score > 0);
+  if (scored.length === 0) return null;
+  scored.sort((a, b) => b.score - a.score);
+  const topId = scored[0].entry.lessonId;
+  return LESSONS.find(l => l.id === topId) || null;
+}
+
+async function askAI(text) {
+  const lesson = getRelevantLesson(text);
+  const contextBlock = lesson
+    ? `Judul: ${lesson.title}\n${lesson.body}\nRumus:\n${lesson.formula}\nPoin penting:\n- ${lesson.points.join('\n- ')}`
+    : `Tidak ada catatan yang cocok persis. Daftar topik yang tersedia: ${LESSONS.map(l => l.title).join(', ')}.`;
+
+  const systemPrompt = `Kamu asisten belajar fisika SMA berbahasa Indonesia. Jawab HANYA berdasarkan catatan berikut, ringkas (maksimal 4-5 kalimat), dan gunakan istilah fisika yang tepat. Jika pertanyaan di luar catatan ini, katakan topik itu belum ada di 15 catatan dan sarankan topik yang tersedia.\n\nCatatan:\n${contextBlock}`;
+
+  const thinkingDiv = addMsg('ai', '…');
+  chatStatus.textContent = 'AI sedang berpikir...';
+
+  try {
+    const stream = await aiEngine.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: text }
+      ],
+      stream: true,
+      temperature: 0.4
+    });
+
+    let full = '';
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content || '';
+      if (delta) {
+        full += delta;
+        thinkingDiv.textContent = full;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+    }
+    if (!full.trim()) thinkingDiv.textContent = 'Model tidak memberi jawaban, coba pertanyaan lain.';
+    addMeta(`Mode: <b>AI Lokal (${loadedModelId})</b>` + (lesson ? ` · Konteks: <b>${lesson.title}</b>` : ' · Konteks: <b>umum</b>'));
+  } catch (err) {
+    console.error(err);
+    thinkingDiv.textContent = 'Terjadi error saat menjalankan model: ' + (err && err.message ? err.message : err);
+  } finally {
+    chatSend.disabled = false;
+    chatStatus.textContent = 'siap (' + loadedModelId + ')';
+  }
+}
+
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+  addMsg('user', text);
+  chatSend.disabled = true;
+
+  if (mode === 'ai') {
+    if (!aiEngine) {
+      addMsg('ai', 'Model AI belum dimuat. Klik "Muat Model" di panel atas dulu, ya.');
+      chatSend.disabled = false;
+      return;
+    }
+    askAI(text);
+    return;
+  }
+
+  chatStatus.textContent = 'mencari...';
+  const thinkingDiv = addMsg('ai', 'Mencari kata kunci di 15 catatan...');
+
+  // Tidak ada pemanggilan API sama sekali — murni pencocokan kata kunci lokal di browser.
+  setTimeout(() => {
+    const result = searchAnswer(text);
+    thinkingDiv.textContent = result.answer;
+
+    const sentenceCount = countSentences(result.answer);
+    if (result.matched) {
+      addMeta(`Kata kunci cocok: <b>${result.matchedKeywords.join(', ')}</b> · Sumber: <b>${result.source}</b> · Kalimat dihasilkan: <b>${sentenceCount}</b>`);
+    } else {
+      addMeta(`Kata kunci cocok: <b>tidak ada</b> · Kalimat dihasilkan: <b>${sentenceCount}</b>`);
+    }
+
+    chatSend.disabled = false;
+    chatStatus.textContent = 'siap';
+  }, 250);
+}
+
+chatSend.onclick = sendMessage;
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+</script>
+</body>
+</html>
