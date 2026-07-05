@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALT3 - Adaptive Local Tree & AI</title>
+
+<style>
+  /* ==========================================================
+     1. RESET & BASE
+     ========================================================== */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-main: #0f1115;
+    --bg-panel: #161922;
+    --bg-panel-alt: #1c2029;
+    --border-color: #2a2f3a;
+    --text-primary: #e6e8ec;
+    --text-secondary: #9aa1ac;
+    --accent: #4f8cff;
+    --accent-hover: #6ea0ff;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+
+  /* ==========================================================
+     2. APP LAYOUT (Grid: navbar / body / footer)
+     ========================================================== */
+  #app-root {
+    display: grid;
+    grid-template-rows: 56px 1fr 32px;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ---------- NAVBAR ---------- */
+  #navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+  }
+
+  #navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  #navbar .brand .logo-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  #navbar .nav-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  #navbar button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  #navbar button:hover {
+    background-color: var(--bg-panel-alt);
+    color: var(--text-primary);
+    border-color: var(--accent);
+  }
+
+  /* ---------- MAIN BODY (Sidebar / Editor / AI Panel) ---------- */
+  #main-body {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  /* ---------- SIDEBAR (Recursive Tree) ---------- */
+  #sidebar {
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 12px;
+    transition: transform var(--transition-normal);
+  }
+
+  #sidebar h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  #tree-container {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* Kondisi kosong (fallback, saat ini jarang terjadi karena root selalu ada) */
+  #tree-container.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80%;
+    text-align: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  /* ---------- TREE STRUCTURE (Recursive Tree rendering) ---------- */
+  .tree-list {
+    list-style: none;
+  }
+
+  .tree-node-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+
+  .tree-node-row:hover {
+    background-color: var(--bg-panel-alt);
+  }
+
+  .tree-node-row:hover .tree-node-actions {
+    visibility: visible;
+  }
+
+  .tree-node-row.selected {
+    background-color: rgba(79, 140, 255, 0.16);
+    outline: 1px solid var(--accent);
+  }
+
+  .tree-toggle {
+    width: 14px;
+    flex-shrink: 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 11px;
+    user-select: none;
+  }
+
+  .tree-node-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+
+  .tree-node-actions {
+    display: flex;
+    gap: 2px;
+    visibility: hidden;
+    flex-shrink: 0;
+  }
+
+  .tree-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .tree-action-btn:hover {
+    background-color: var(--bg-main);
+    color: var(--accent-hover);
+  }
+
+  /* ---------- EDITOR AREA ---------- */
+  #editor-area {
+    background-color: var(--bg-main);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border-color);
+  }
+
+  #editor-toolbar {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  #editor-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Utilitas umum: dipakai editor, modal, dsb untuk sembunyikan elemen */
+  .hidden {
+    display: none !important;
+  }
+
+  /* ---------- EDITOR: state kosong (belum ada node dipilih) ---------- */
+  .editor-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+  }
+
+  /* ---------- EDITOR: state aktif (node terpilih) ---------- */
+  .editor-active {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px 24px;
+  }
+
+  .editor-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .editor-textarea {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  .editor-statusbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  #editor-status {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ---------- MODAL CUSTOM (pengganti prompt/confirm bawaan browser) ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal);
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform: translateY(-10px) scale(0.98);
+    transition: transform var(--transition-normal);
+  }
+
+  .modal-overlay.show .modal-box {
+    transform: translateY(0) scale(1);
+  }
+
+  .modal-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .modal-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .modal-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .modal-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .modal-btn:hover {
+    background-color: var(--bg-panel-alt);
+    color: var(--text-primary);
+  }
+
+  .modal-btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+  }
+
+  .modal-btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  .modal-btn-danger {
+    background: #d9534f;
+    border-color: #d9534f;
+    color: #ffffff;
+  }
+
+  .modal-btn-danger:hover {
+    background: #e2726e;
+    border-color: #e2726e;
+  }
+
+  /* ---------- AI PANEL ---------- */
+  #ai-panel {
+    background-color: var(--bg-panel);
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--transition-normal);
+  }
+
+  #ai-panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  #ai-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  #footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px;
+    background-color: var(--bg-panel);
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  #footer .save-status {
+    white-space: nowrap;
+  }
+
+  #footer .footer-brand {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ==========================================================
+     3. RESPONSIVE (Mobile)
+     ========================================================== */
+  @media (max-width: 900px) {
+    #main-body {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+      position: relative;
+    }
+
+    #sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      bottom: 32px;
+      width: 240px;
+      transform: translateX(-100%);
+      z-index: 20;
+      box-shadow: 4px 0 12px rgba(0,0,0,0.4);
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+    }
+
+    #ai-panel {
+      position: fixed;
+      top: 56px;
+      right: 0;
+      bottom: 32px;
+      width: 280px;
+      transform: translateX(100%);
+      z-index: 20;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.4);
+    }
+
+    #ai-panel.open {
+      transform: translateX(0);
+    }
+
+    #editor-area {
+      border-right: none;
+    }
+  }
+
+  /* Simple scrollbar styling for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-main);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+  <div id="app-root">
+
+    <!-- ============ NAVBAR ============ -->
+    <div id="navbar">
+      <div class="brand">
+        <span class="logo-dot"></span>
+        <span>ALT3</span>
+      </div>
+      <div class="nav-actions">
+        <button id="btn-toggle-sidebar">Tree</button>
+        <button id="btn-toggle-ai">AI</button>
+      </div>
+    </div>
+
+    <!-- ============ MAIN BODY ============ -->
+    <div id="main-body">
+
+      <!-- Sidebar: Recursive Tree -->
+      <div id="sidebar">
+        <h2>Recursive Tree</h2>
+        <div id="tree-container">
+          <!-- Diisi secara dinamis oleh TreeManager.renderTree() -->
+        </div>
+      </div>
+
+      <!-- Editor Area -->
+      <div id="editor-area">
+        <div id="editor-toolbar">Editor Toolbar (placeholder)</div>
+        <div id="editor-content">
+          <!-- State: belum ada node dipilih -->
+          <div id="editor-placeholder" class="editor-placeholder">
+            Pilih salah satu node pada tree di sebelah kiri untuk mulai menulis catatan.
+          </div>
+
+          <!-- State: node aktif sedang dibuka -->
+          <div id="editor-active" class="editor-active hidden">
+            <div id="editor-title" class="editor-title">&nbsp;</div>
+            <textarea id="editor-textarea" class="editor-textarea" placeholder="Tulis catatan di sini..." spellcheck="false"></textarea>
+            <div class="editor-statusbar">
+              <span id="editor-status">Tersimpan di memori</span>
+              <span id="editor-char-count">0 karakter</span>
+              <span id="editor-word-count">0 kata</span>
+              <span id="editor-updated-at">Terakhir diedit: -</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Panel -->
+      <div id="ai-panel">
+        <h2>AI Assistant</h2>
+        <div id="ai-container">
+          Panel AI kosong.<br>Akan dikembangkan di tahap berikutnya.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ FOOTER ============ -->
+    <div id="footer">
+      <span id="save-status-indicator" class="save-status">🟢 Saved</span>
+      <span class="footer-brand">ALT3 &mdash; Adaptive Local Tree & AI &copy; 2026</span>
+    </div>
+
+  </div>
+
+  <!-- ============ MODAL CUSTOM (pengganti prompt/confirm) ============ -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="modal-title" class="modal-title"></h3>
+      <p id="modal-message" class="modal-message"></p>
+      <input id="modal-input" type="text" class="modal-input hidden" autocomplete="off">
+      <div class="modal-actions">
+        <button id="modal-btn-cancel" type="button" class="modal-btn">Batal</button>
+        <button id="modal-btn-confirm" type="button" class="modal-btn modal-btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ============================================================
+     ALT3 - JAVASCRIPT ARCHITECTURE
+     Struktur modular berbasis class.
+     Setiap class bertanggung jawab atas satu domain.
+     Saat ini masih kerangka (foundation) - logika akan
+     ditambahkan bertahap pada prompt-prompt berikutnya.
+     ============================================================ */
+
+  /* ------------------------------------------------------------
+     Config
+     Tanggung jawab: satu-satunya sumber kebenaran untuk seluruh
+     nilai konfigurasi aplikasi. Manager lain TIDAK BOLEH menulis
+     angka/string "ajaib" (magic value) sendiri - selalu rujuk ke sini,
+     supaya perubahan satu nilai (misal delay auto-save) cukup di satu tempat.
+     Bersifat static -> dipakai langsung sebagai Config.NAMA_KONSTANTA
+     tanpa perlu di-instantiate atau di-inject ke constructor manapun.
+     ------------------------------------------------------------ */
+  class Config {
+    static APP_NAME = 'ALT3';
+    static APP_FULL_NAME = 'Adaptive Local Tree & AI';
+    static THEME = 'dark';
+
+    static AUTOSAVE_DELAY = 300;      // ms, debounce auto-save EditorManager (memory cache)
+    static MODAL_TRANSITION_MS = 250; // ms, harus selaras dengan --transition-normal di CSS
+    static TREE_INDENT = 16;          // px, indentasi per level kedalaman tree
+
+    static MAX_HISTORY = 50;          // batas jumlah entri history/undo (fitur mendatang)
+
+    static DB_NAME = 'ALT3_DB';           // nama database IndexedDB
+    static DB_VERSION = 1;                // versi skema IndexedDB
+    static DB_STORE_NODES = 'nodes';      // object store utama, keyPath 'id'
+    static DB_STORE_META = 'meta';        // object store kecil untuk data non-node (mis. last selected id), keyPath 'key'
+    static STORAGE_FLUSH_DELAY = 1000;    // ms, debounce Memory Cache -> IndexedDB (StorageManager)
+
+    static ROOT_NODE_TITLE = 'Knowledge';
+    static DEFAULT_NODE_TITLE = 'Node Baru';
+    static DEFAULT_NODE_ICON = '📄';
+  }
+
+  /* ------------------------------------------------------------
+     Utilities
+     Tanggung jawab: kumpulan fungsi helper murni (pure function)
+     yang dipakai lintas manager. Static, tanpa state -> tidak perlu
+     di-instantiate. Aturan wajib: kalau ada 2+ manager butuh logika
+     yang sama (format tanggal, hitung kata, dsb), taruh di sini,
+     jangan ditulis ulang di masing-masing class.
+     ------------------------------------------------------------ */
+  class Utilities {
+    static generateId(prefix = 'id') {
+      return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    static formatDate(isoString, options) {
+      if (!isoString) return '-';
+      const date = new Date(isoString);
+      return date.toLocaleTimeString('id-ID', options || { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // Mengembalikan fungsi ter-debounce dengan method .cancel() tambahan,
+    // supaya pemanggil bisa membatalkan eksekusi tertunda saat konteks berganti
+    // (mis. EditorManager berpindah node sebelum 300ms auto-save berjalan).
+    static debounce(fn, delay) {
+      let timer = null;
+      const debounced = function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+      debounced.cancel = () => clearTimeout(timer);
+      return debounced;
+    }
+
+    static deepClone(value) {
+      if (typeof structuredClone === 'function') return structuredClone(value);
+      return JSON.parse(JSON.stringify(value)); // fallback untuk browser lama
+    }
+
+    static wordCount(text) {
+      const trimmed = (text || '').trim();
+      return trimmed === '' ? 0 : trimmed.split(/\s+/).length;
+    }
+
+    static characterCount(text) {
+      return (text || '').length;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     EventBus
+     Tanggung jawab: satu-satunya jalur komunikasi antar manager
+     mulai tahap ini. Manager TIDAK BOLEH saling memanggil method
+     satu sama lain secara langsung (kecuali dependency inti yang
+     memang disengaja, mis. akses storage) - cukup emit event di
+     sini, dan manager lain yang berkepentingan mendengarkan (on).
+     Ini yang membuat TreeManager bisa berkembang tanpa perlu tahu
+     apa pun tentang EditorManager, SearchManager, atau AIManager.
+     ------------------------------------------------------------ */
+  class EventBus {
+    constructor() {
+      // event name -> array of { callback, once }
+      this.listeners = {};
+    }
+
+    on(event, callback) {
+      if (!this.listeners[event]) this.listeners[event] = [];
+      this.listeners[event].push({ callback, once: false });
+    }
+
+    once(event, callback) {
+      if (!this.listeners[event]) this.listeners[event] = [];
+      this.listeners[event].push({ callback, once: true });
+    }
+
+    off(event, callback) {
+      if (!this.listeners[event]) return;
+      this.listeners[event] = this.listeners[event].filter((l) => l.callback !== callback);
+    }
+
+    emit(event, data) {
+      if (!this.listeners[event]) return;
+      // Salin dulu array-nya: kalau salah satu listener meng-off dirinya
+      // sendiri (atau listener lain) saat emit berjalan, iterasi tetap aman.
+      const snapshot = [...this.listeners[event]];
+      snapshot.forEach(({ callback, once }) => {
+        callback(data);
+        if (once) this.off(event, callback);
+      });
+    }
+
+    clear(event) {
+      if (event) {
+        delete this.listeners[event];
+      } else {
+        this.listeners = {};
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     Logger
+     Tanggung jawab: mencatat aktivitas aplikasi (INFO/WARNING/
+     ERROR/DEBUG) di memori untuk keperluan debugging. Belum
+     ditampilkan ke UI - baru dicerminkan ke console browser
+     supaya tetap berguna selama development.
+     ------------------------------------------------------------ */
+  class Logger {
+    constructor() {
+      this.logs = []; // { level, message, data, timestamp }
+    }
+
+    info(message, data) { this._record('INFO', message, data); }
+    warning(message, data) { this._record('WARNING', message, data); }
+    error(message, data) { this._record('ERROR', message, data); }
+    debug(message, data) { this._record('DEBUG', message, data); }
+
+    getLogs(level) {
+      return level ? this.logs.filter((l) => l.level === level) : this.logs;
+    }
+
+    clearLogs() {
+      this.logs = [];
+    }
+
+    _record(level, message, data) {
+      const entry = {
+        level,
+        message,
+        data: data !== undefined ? data : null,
+        timestamp: new Date().toISOString()
+      };
+      this.logs.push(entry);
+
+      const consoleFn = level === 'ERROR' ? console.error : level === 'WARNING' ? console.warn : console.log;
+      consoleFn(`[ALT3][${level}] ${message}`, data !== undefined ? data : '');
+    }
+  }
+
+  /* ------------------------------------------------------------
+     StorageManager
+     Tanggung jawab: seluruh interaksi dengan IndexedDB
+     (create/read/update/delete data lokal).
+     ------------------------------------------------------------ */
+  /* ------------------------------------------------------------
+     StorageManager
+     Tanggung jawab: SATU-SATUNYA class yang boleh berbicara dengan
+     IndexedDB. Manager lain (TreeManager, EditorManager, dst) tidak
+     pernah memanggil indexedDB secara langsung - mereka hanya membaca/
+     menulis lewat Memory Cache milik class ini (this.cache), dan
+     StorageManager sendiri yang menyelaraskannya ke IndexedDB di
+     belakang layar lewat event dari EventBus + debounce 1000ms.
+
+     Alur saat aplikasi dibuka:
+       IndexedDB --load()--> Memory Cache --> dibaca TreeManager
+
+     Alur saat ada perubahan (auto-save):
+       TreeManager ubah node --> emit event --> StorageManager antre
+       perubahan --> debounce 1000ms --> tulis ke IndexedDB
+     ------------------------------------------------------------ */
+  class StorageManager {
+    constructor(logger, eventBus) {
+      this.logger = logger || null;
+      this.eventBus = eventBus || null;
+
+      this.dbName = Config.DB_NAME;
+      this.dbVersion = Config.DB_VERSION;
+      this.db = null;
+
+      // Memory Cache: satu-satunya "sumber kebenaran" struktur tree yang
+      // dibaca TreeManager (lihat getter this.nodes/this.rootId di TreeManager).
+      this.cache = {
+        nodes: {},        // id -> node
+        rootId: null,
+        selectedId: null  // node terakhir dibuka di editor, untuk restore state
+      };
+
+      // Antrean perubahan yang belum disinkronkan ke IndexedDB.
+      this.pendingWrites = new Map();  // id -> node object (butuh di-put)
+      this.pendingDeletes = new Set(); // id yang butuh di-delete
+      this.pendingMeta = new Map();    // key -> value (mis. lastSelectedId)
+
+      this._flushTimer = null;
+      this._isFlushing = false;
+      this._flushAgainAfter = false;
+
+      this.status = 'saved'; // 'saved' | 'saving' | 'error'
+      this.statusEl = document.getElementById('save-status-indicator');
+      this._renderStatus();
+    }
+
+    /* ================= LIFECYCLE ================= */
+
+    /**
+     * Buka koneksi IndexedDB, muat seluruh data ke Memory Cache, lalu
+     * mulai mendengarkan event perubahan tree untuk auto-save.
+     * Dipanggil sekali oleh App sebelum manager lain di-init, supaya
+     * saat TreeManager.init() berjalan, Memory Cache sudah terisi.
+     */
+    async initialize() {
+      try {
+        this.db = await this._openDB();
+        // LOG WAJIB: checkpoint "Database opened".
+        this.logger && this.logger.info('StorageManager: Database opened (koneksi IndexedDB berhasil dibuka)', { dbName: this.dbName, dbVersion: this.dbVersion });
+
+        await this.load();
+        this._bindEvents();
+        this._bindUnloadHandler();
+        this._setStatus('saved');
+      } catch (err) {
+        this.logger && this.logger.error('StorageManager: gagal inisialisasi IndexedDB', { error: err && err.message });
+        this._setStatus('error');
+        // Tetap bind event supaya app tidak crash; saveNode/deleteNode akan
+        // no-op dengan aman selama this.db null (lihat guard di masing-masing fungsi).
+        this._bindEvents();
+      }
+    }
+
+    /**
+     * Memuat seluruh node dari IndexedDB ke Memory Cache (this.cache).
+     * Root ditentukan dari node yang parentId-nya null.
+     */
+    async load() {
+      if (!this.db) {
+        this.logger && this.logger.warning('StorageManager: load dilewati, tidak ada koneksi IndexedDB (this.db null)');
+        return;
+      }
+
+      // LOG WAJIB: checkpoint "Loading..." - ditembak SEBELUM request getAll()
+      // dikirim, supaya kalau IndexedDB lambat/menggantung, log ini tetap
+      // terlihat di console sebagai bukti proses sudah dimulai.
+      this.logger && this.logger.info('StorageManager: Loading... (memuat seluruh node dari IndexedDB)', { dbName: this.dbName });
+
+      const nodes = await this._getAll(Config.DB_STORE_NODES);
+      const nodeMap = {};
+      let rootId = null;
+      nodes.forEach((node) => {
+        nodeMap[node.id] = node;
+        if (node.parentId === null) rootId = node.id;
+      });
+
+      this.cache.nodes = nodeMap;
+      this.cache.rootId = rootId;
+
+      const lastSelectedId = await this._getMeta('lastSelectedId');
+      this.cache.selectedId = (lastSelectedId && nodeMap[lastSelectedId]) ? lastSelectedId : null;
+
+      // LOG WAJIB: checkpoint "Loaded X nodes".
+      this.logger && this.logger.info(`StorageManager: Loaded ${nodes.length} nodes dari IndexedDB`, {
+        totalNode: nodes.length,
+        rootId: this.cache.rootId,
+        selectedId: this.cache.selectedId
+      });
+    }
+
+    /**
+     * Memaksa penyimpanan segera atas seluruh perubahan yang masih
+     * tertunda (mengabaikan debounce). Dipakai saat browser akan ditutup,
+     * atau kapan pun butuh kepastian "tersimpan sekarang".
+     */
+    async save() {
+      clearTimeout(this._flushTimer);
+      await this._flush();
+    }
+
+    /**
+     * Menulis ULANG seluruh isi Memory Cache saat ini ke IndexedDB,
+     * terlepas dari status dirty/pending. Berguna sebagai mekanisme
+     * pemulihan penuh (full resync), berbeda dari save() yang hanya
+     * menulis perubahan yang sedang diantre.
+     */
+    async saveAll() {
+      if (!this.db) {
+        this.logger && this.logger.warning('StorageManager: saveAll dilewati, IndexedDB tidak tersedia');
+        return;
+      }
+      const allNodes = Object.values(this.cache.nodes);
+      this._setStatus('saving');
+      try {
+        for (const node of allNodes) {
+          await this.saveNode(node);
+        }
+        this._setStatus('saved');
+        this.logger && this.logger.info('StorageManager: saveAll selesai (full resync)', { totalNode: allNodes.length });
+      } catch (err) {
+        this._setStatus('error');
+        this.logger && this.logger.error('StorageManager: saveAll gagal', { error: err && err.message });
+      }
+    }
+
+    /**
+     * Simpan/perbarui satu node ke IndexedDB. Dipakai baik langsung
+     * (mis. dari saveAll) maupun secara internal oleh _flush().
+     */
+    async saveNode(node) {
+      if (!this.db || !node) return;
+      try {
+        await this._put(Config.DB_STORE_NODES, Utilities.deepClone(node));
+        this.logger && this.logger.debug('StorageManager: node tersimpan', { id: node.id });
+      } catch (err) {
+        this.logger && this.logger.error('StorageManager: gagal menyimpan node', { id: node.id, error: err && err.message });
+        throw err;
+      }
+    }
+
+    /**
+     * Hapus satu node dari IndexedDB berdasarkan id.
+     */
+    async deleteNode(id) {
+      if (!this.db || !id) return;
+      try {
+        await this._delete(Config.DB_STORE_NODES, id);
+        this.logger && this.logger.debug('StorageManager: node dihapus', { id });
+      } catch (err) {
+        this.logger && this.logger.error('StorageManager: gagal menghapus node', { id, error: err && err.message });
+        throw err;
+      }
+    }
+
+    /**
+     * Mengosongkan seluruh database (nodes + meta) dan Memory Cache.
+     * Belum dipanggil dari UI mana pun tahap ini - disiapkan untuk
+     * fitur "reset data" di tahap berikutnya.
+     */
+    async clearDatabase() {
+      if (!this.db) return;
+      try {
+        await this._clearStore(Config.DB_STORE_NODES);
+        await this._clearStore(Config.DB_STORE_META);
+        this.cache = { nodes: {}, rootId: null, selectedId: null };
+        this.pendingWrites.clear();
+        this.pendingDeletes.clear();
+        this.pendingMeta.clear();
+        this.logger && this.logger.warning('StorageManager: seluruh database dikosongkan');
+      } catch (err) {
+        this.logger && this.logger.error('StorageManager: gagal mengosongkan database', { error: err && err.message });
+        throw err;
+      }
+    }
+
+    /**
+     * Mengembalikan salinan (deep clone) Memory Cache saat ini.
+     * Belum disalurkan ke fitur Export UI mana pun - method ini
+     * disiapkan lebih dulu supaya tahap Import/Export berikutnya
+     * tinggal memakainya, bukan menulis ulang cara membaca cache.
+     */
+    exportMemory() {
+      return Utilities.deepClone(this.cache);
+    }
+
+    /* ================= AUTO-SAVE (EventBus -> debounce -> IndexedDB) ================= */
+
+    _bindEvents() {
+      if (!this.eventBus) return;
+
+      this.eventBus.on('nodeCreated', (node) => this._queueSave(node));
+      this.eventBus.on('nodeUpdated', (node) => this._queueSave(node));
+      this.eventBus.on('nodeDeleted', (payload) => this._handleNodeDeleted(payload));
+      this.eventBus.on('nodeMoved', (payload) => this._handleNodeMoved(payload));
+      this.eventBus.on('treeChanged', (payload) => this._handleTreeChanged(payload));
+
+      // Tambahan di luar 5 event inti: dipakai supaya "editor kembali seperti
+      // terakhir kali" benar-benar terpenuhi (node terakhir dibuka ikut tersimpan).
+      this.eventBus.on('nodeSelected', (node) => this._queueMeta('lastSelectedId', node ? node.id : null));
+    }
+
+    _bindUnloadHandler() {
+      window.addEventListener('beforeunload', () => {
+        // Beri kesempatan dulu ke manager lain (mis. EditorManager, yang punya
+        // debounce 300ms sendiri sebelum konten benar-benar commit ke Memory
+        // Cache) untuk memaksa commit perubahan yang masih tertahan - SEBELUM
+        // StorageManager melakukan flush. EventBus.emit di sini berjalan
+        // SINKRON (lihat class EventBus di atas), jadi pada saat this.save()
+        // dipanggil tepat setelahnya, pendingWrites sudah pasti menyertakan
+        // perubahan ter-commit tersebut.
+        this.eventBus && this.eventBus.emit('appBeforeUnload');
+
+        this.logger && this.logger.info('StorageManager: beforeunload terpicu, mengirim flush terakhir', {
+          pendingWrites: this.pendingWrites.size,
+          pendingDeletes: this.pendingDeletes.size,
+          pendingMeta: this.pendingMeta.size
+        });
+
+        // Best-effort: sebagian besar browser masih memberi sedikit waktu
+        // untuk operasi sinkron/microtask singkat saat beforeunload.
+        this.save();
+      });
+    }
+
+    _queueSave(node) {
+      if (!node) return;
+      this.pendingWrites.set(node.id, node);
+      this.pendingDeletes.delete(node.id);
+      this._setStatus('saving');
+      this._scheduleFlush();
+    }
+
+    _queueDelete(id) {
+      if (!id) return;
+      this.pendingDeletes.add(id);
+      this.pendingWrites.delete(id);
+      this._setStatus('saving');
+      this._scheduleFlush();
+    }
+
+    _queueMeta(key, value) {
+      this.pendingMeta.set(key, value);
+      this._scheduleFlush();
+    }
+
+    _handleNodeDeleted(payload) {
+      const { id, node, descendantIds } = payload || {};
+      const idsToDelete = (descendantIds && descendantIds.length) ? descendantIds : [id];
+      idsToDelete.forEach((nid) => this._queueDelete(nid));
+
+      // Parent kehilangan satu child -> array children milik parent berubah,
+      // jadi parent juga harus ikut ditulis ulang.
+      if (node && node.parentId) {
+        const parent = this.cache.nodes[node.parentId];
+        if (parent) this._queueSave(parent);
+      }
+    }
+
+    _handleNodeMoved(payload) {
+      const { id, oldParentId, newParentId } = payload || {};
+      [id, oldParentId, newParentId].forEach((nid) => {
+        const node = nid ? this.cache.nodes[nid] : null;
+        if (node) this._queueSave(node);
+      });
+    }
+
+    _handleTreeChanged(payload) {
+      const { type, id, parentId } = payload || {};
+
+      // BUG FIX: 'create' - TreeManager.createNode() mendorong id child baru
+      // ke *parent*.children (dan set parent.expanded = true), tapi listener
+      // 'nodeCreated' di atas hanya menyimpan NODE BARU itu sendiri. Parent -
+      // yang array children-nya justru berubah - tidak pernah ikut di-queue,
+      // jadi tidak pernah ikut ditulis ke IndexedDB. Akibatnya: node baru
+      // tersimpan sendirian tanpa ada parent manapun yang "menunjuk" ke sana
+      // di database, sehingga setelah reload ia jadi node yatim yang tidak
+      // pernah dirender (root/parent yang dimuat ulang punya children array
+      // versi LAMA). Ini akar dari bug "tree hilang setelah refresh/reopen".
+      if (type === 'create') {
+        const parent = parentId ? this.cache.nodes[parentId] : null;
+        if (parent) {
+          this._queueSave(parent);
+        } else {
+          this.logger && this.logger.warning('StorageManager: treeChanged(create) tanpa parent valid di cache', { parentId });
+        }
+        return;
+      }
+
+      // 'duplicate' membuat clone + seluruh subtree descendant-nya secara
+      // rekursif sekaligus mendorong clone.id ke parent.children - jadi baik
+      // seluruh subtree KLON maupun PARENT dari klon itu (yang array
+      // children-nya juga berubah, persis seperti kasus 'create' di atas)
+      // harus ikut disimpan di sini.
+      if (type === 'duplicate' && id) {
+        this._collectCacheSubtreeIds(id).forEach((nid) => {
+          const node = this.cache.nodes[nid];
+          if (node) this._queueSave(node);
+        });
+
+        const clone = this.cache.nodes[id];
+        const cloneParent = clone && clone.parentId ? this.cache.nodes[clone.parentId] : null;
+        if (cloneParent) this._queueSave(cloneParent);
+      }
+    }
+
+    _collectCacheSubtreeIds(id) {
+      const node = this.cache.nodes[id];
+      if (!node) return [];
+      let ids = [id];
+      (node.children || []).forEach((cid) => {
+        ids = ids.concat(this._collectCacheSubtreeIds(cid));
+      });
+      return ids;
+    }
+
+    _scheduleFlush() {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = setTimeout(() => this._flush(), Config.STORAGE_FLUSH_DELAY);
+    }
+
+    async _flush() {
+      if (this.pendingWrites.size === 0 && this.pendingDeletes.size === 0 && this.pendingMeta.size === 0) return;
+
+      // Cegah dua _flush() berjalan tumpang tindih (mis. debounce timer
+      // menembak persis saat save() dipanggil manual dari beforeunload).
+      if (this._isFlushing) {
+        this._flushAgainAfter = true;
+        return;
+      }
+      this._isFlushing = true;
+
+      const writes = Array.from(this.pendingWrites.values());
+      const deletes = Array.from(this.pendingDeletes.values());
+      const metaEntries = Array.from(this.pendingMeta.entries());
+      this.pendingWrites.clear();
+      this.pendingDeletes.clear();
+      this.pendingMeta.clear();
+
+      this._setStatus('saving');
+      try {
+        for (const node of writes) await this.saveNode(node);
+        for (const id of deletes) await this.deleteNode(id);
+        for (const [key, value] of metaEntries) await this._saveMeta(key, value);
+
+        this._setStatus('saved');
+        this.logger && this.logger.info('StorageManager: auto-save selesai', {
+          jumlahDisimpan: writes.length,
+          jumlahDihapus: deletes.length
+        });
+      } catch (err) {
+        // Kembalikan item yang gagal ke antrean supaya percobaan berikutnya
+        // (event baru apa pun, atau save() manual) tetap menyertakannya.
+        writes.forEach((n) => this.pendingWrites.set(n.id, n));
+        deletes.forEach((id) => this.pendingDeletes.add(id));
+        metaEntries.forEach(([k, v]) => this.pendingMeta.set(k, v));
+
+        this._setStatus('error');
+        this.logger && this.logger.error('StorageManager: auto-save gagal', { error: err && err.message });
+      } finally {
+        this._isFlushing = false;
+        if (this._flushAgainAfter) {
+          this._flushAgainAfter = false;
+          this._scheduleFlush();
+        }
+      }
+    }
+
+    /* ================= INDIKATOR STATUS (footer) ================= */
+
+    _setStatus(status) {
+      const prevStatus = this.status;
+      this.status = status;
+      this._renderStatus();
+
+      // LOG WAJIB: checkpoint "Saving..." / "Saved successfully" / "Error ...".
+      // Ditembak di SATU titik pusat ini (bukan tersebar di banyak tempat)
+      // supaya setiap kali indikator status di footer berubah, selalu ada
+      // log yang menyertainya - kalau suatu saat status di UI "diam" tanpa
+      // log yang cocok, itu sendiri sudah jadi sinyal debugging yang jelas.
+      if (this.logger && prevStatus !== status) {
+        if (status === 'saving') this.logger.info('StorageManager: Saving...');
+        else if (status === 'saved') this.logger.info('StorageManager: Saved successfully');
+        else if (status === 'error') this.logger.error('StorageManager: Error - status penyimpanan berubah ke error');
+      }
+    }
+
+    _renderStatus() {
+      if (!this.statusEl) return;
+      const map = {
+        saved: { icon: '🟢', text: 'Saved' },
+        saving: { icon: '🟡', text: 'Saving...' },
+        error: { icon: '🔴', text: 'Error' }
+      };
+      const current = map[this.status] || map.saved;
+      this.statusEl.textContent = `${current.icon} ${current.text}`;
+      this.statusEl.title = `Status penyimpanan: ${current.text}`;
+    }
+
+    /* ================= INDEXEDDB - PRIMITIF INTERNAL ================= */
+    /* Hanya method di bawah ini yang benar-benar menyentuh objek         */
+    /* `indexedDB` bawaan browser. Manager lain TIDAK PERNAH memanggil    */
+    /* method-method ini secara langsung.                                */
+
+    _openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(this.dbName, this.dbVersion);
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(Config.DB_STORE_NODES)) {
+            db.createObjectStore(Config.DB_STORE_NODES, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(Config.DB_STORE_META)) {
+            db.createObjectStore(Config.DB_STORE_META, { keyPath: 'key' });
+          }
+          // LOG WAJIB: checkpoint "Database upgraded" - sebelumnya tidak ada
+          // log di sini sama sekali, jadi perubahan skema (mis. object store
+          // baru dibuat) tidak pernah terlihat di console saat debugging.
+          this.logger && this.logger.info('StorageManager: Database upgraded', {
+            dbName: this.dbName,
+            oldVersion: event.oldVersion,
+            newVersion: event.newVersion
+          });
+        };
+
+        request.onsuccess = (event) => resolve(event.target.result);
+        request.onerror = (event) => reject(event.target.error || new Error('Gagal membuka IndexedDB'));
+      });
+    }
+
+    _getAll(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(storeName, 'readonly');
+        const request = tx.objectStore(storeName).getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    _put(storeName, value) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(value);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    _delete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    _clearStore(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    _getMeta(key) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(Config.DB_STORE_META, 'readonly');
+        const request = tx.objectStore(Config.DB_STORE_META).get(key);
+        request.onsuccess = () => resolve(request.result ? request.result.value : null);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async _saveMeta(key, value) {
+      await this._put(Config.DB_STORE_META, { key, value });
+    }
+  }
+
+  /* ------------------------------------------------------------
+     ModalManager
+     Tanggung jawab: menampilkan modal custom (prompt/confirm)
+     yang mengikuti tema website, menggantikan window.prompt()
+     dan window.confirm() bawaan browser. Dipakai oleh manager
+     lain (TreeManager, dan manager berikutnya) yang butuh
+     interaksi konfirmasi/input singkat dari user.
+     ------------------------------------------------------------ */
+  class ModalManager {
+    constructor(logger) {
+      this.overlayEl = document.getElementById('modal-overlay');
+      this.titleEl = document.getElementById('modal-title');
+      this.messageEl = document.getElementById('modal-message');
+      this.inputEl = document.getElementById('modal-input');
+      this.cancelBtn = document.getElementById('modal-btn-cancel');
+      this.confirmBtn = document.getElementById('modal-btn-confirm');
+
+      this.logger = logger || null;
+
+      this._mode = null;       // 'prompt' | 'confirm'
+      this._resolver = null;   // resolve function dari Promise yang sedang aktif
+    }
+
+    init() {
+      this.cancelBtn.addEventListener('click', () => this._close(null));
+      this.confirmBtn.addEventListener('click', () => this._handleConfirmClick());
+
+      // Klik di luar modal-box (area overlay) dianggap batal
+      this.overlayEl.addEventListener('click', (e) => {
+        if (e.target === this.overlayEl) this._close(null);
+      });
+
+      // Escape = batal, Enter = konfirmasi (hanya saat modal terbuka)
+      document.addEventListener('keydown', (e) => {
+        if (!this.overlayEl.classList.contains('show')) return;
+        if (e.key === 'Escape') this._close(null);
+        if (e.key === 'Enter') this._handleConfirmClick();
+      });
+    }
+
+    /**
+     * Menampilkan modal berisi input teks.
+     * Resolve dengan string (hasil input) atau null jika dibatalkan.
+     */
+    showPrompt({ title, message, defaultValue = '', confirmLabel = 'OK' }) {
+      return this._open({ title, message, defaultValue, mode: 'prompt', confirmLabel });
+    }
+
+    /**
+     * Menampilkan modal konfirmasi ya/tidak.
+     * Resolve dengan true (dikonfirmasi) atau null jika dibatalkan.
+     */
+    showConfirm({ title, message, confirmLabel = 'OK', danger = false }) {
+      return this._open({ title, message, mode: 'confirm', confirmLabel, danger });
+    }
+
+    /* ---------------- INTERNAL ---------------- */
+
+    _open({ title, message, defaultValue, mode, confirmLabel, danger }) {
+      this._mode = mode;
+
+      this.titleEl.textContent = title || '';
+      this.messageEl.textContent = message || '';
+      this.messageEl.classList.toggle('hidden', !message);
+
+      if (mode === 'prompt') {
+        this.inputEl.classList.remove('hidden');
+        this.inputEl.value = defaultValue || '';
+      } else {
+        this.inputEl.classList.add('hidden');
+      }
+
+      this.confirmBtn.textContent = confirmLabel || 'OK';
+      this.confirmBtn.classList.toggle('modal-btn-danger', !!danger);
+      this.confirmBtn.classList.toggle('modal-btn-primary', !danger);
+
+      this.overlayEl.classList.remove('hidden');
+      // requestAnimationFrame supaya transisi CSS (.show) benar-benar terpicu
+      requestAnimationFrame(() => {
+        this.overlayEl.classList.add('show');
+        if (mode === 'prompt') {
+          this.inputEl.focus();
+          this.inputEl.select();
+        }
+      });
+
+      return new Promise((resolve) => {
+        this._resolver = resolve;
+      });
+    }
+
+    _handleConfirmClick() {
+      if (this._mode === 'prompt') {
+        this._close(this.inputEl.value);
+      } else {
+        this._close(true);
+      }
+    }
+
+    _close(result) {
+      this.overlayEl.classList.remove('show');
+      // Tunggu transisi selesai sebelum benar-benar disembunyikan dari layout
+      setTimeout(() => {
+        this.overlayEl.classList.add('hidden');
+      }, Config.MODAL_TRANSITION_MS);
+
+      if (this._resolver) {
+        this._resolver(result);
+        this._resolver = null;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     TreeManager
+     Tanggung jawab: mengelola struktur Recursive Tree
+     (node, parent-child, ekspansi/kolaps, dsb).
+     ------------------------------------------------------------ */
+  class TreeManager {
+    constructor(storageManager, modalManager, eventBus, logger) {
+      this.storage = storageManager;
+      this.modal = modalManager;
+      this.eventBus = eventBus;
+      this.logger = logger;
+
+      // TreeManager TIDAK LAGI menyimpan node miliknya sendiri. "this.nodes"
+      // dan "this.rootId" di bawah ini adalah getter/setter tipis yang selalu
+      // menunjuk ke Memory Cache milik StorageManager (this.storage.cache) -
+      // supaya persis satu sumber data yang dipakai bersama, dan StorageManager
+      // tetap bisa mengamati isinya untuk keperluan auto-save ke IndexedDB.
+      this.selectedId = null;
+
+      this.containerEl = document.getElementById('tree-container');
+    }
+
+    // Flat map: id -> node. Dipilih dibanding nested object murni supaya
+    // findNode/moveNode/deleteNode bisa O(1) tanpa traversal.
+    get nodes() {
+      return this.storage.cache.nodes;
+    }
+
+    get rootId() {
+      return this.storage.cache.rootId;
+    }
+
+    set rootId(id) {
+      this.storage.cache.rootId = id;
+    }
+
+    /* ---------------- LIFECYCLE ---------------- */
+
+    init() {
+      // Pada titik ini StorageManager.initialize() sudah selesai (dipanggil
+      // dan di-await oleh App sebelum TreeManager.init() berjalan), jadi
+      // this.rootId sudah mencerminkan isi IndexedDB kalau memang ada.
+      if (!this.rootId) {
+        // Memory Cache kosong -> instalasi baru / IndexedDB belum berisi apa pun.
+        this._createRootNode();
+        this.eventBus.emit('nodeCreated', this.findNode(this.rootId));
+        this.logger.info('TreeManager: tidak ada data tersimpan, root baru dibuat', { rootId: this.rootId });
+      } else {
+        this.logger.info('TreeManager: tree dipulihkan dari Memory Cache (IndexedDB)', {
+          rootId: this.rootId,
+          totalNode: Object.keys(this.nodes).length
+        });
+      }
+
+      // Pulihkan node yang terakhir dibuka di editor (jika masih ada), supaya
+      // "tree dan editor kembali seperti terakhir kali" - fallback ke root
+      // kalau belum pernah ada, atau kalau node tersebut sudah tidak ada lagi.
+      const restoredSelectedId = this.storage.cache.selectedId;
+      this.selectedId = (restoredSelectedId && this.findNode(restoredSelectedId)) ? restoredSelectedId : this.rootId;
+
+      this._bindEvents();
+      this.renderTree();
+      this._emitSelected();
+      this.logger.info('TreeManager diinisialisasi', { rootId: this.rootId, selectedId: this.selectedId });
+    }
+
+    /* ---------------- HELPER INTERNAL ---------------- */
+
+    // TreeManager TIDAK memanggil EditorManager/SearchManager/AIManager secara
+    // langsung. Ia hanya emit event lewat EventBus - siapa pun yang berkepentingan
+    // (saat ini EditorManager) yang mendengarkan sendiri lewat eventBus.on(...).
+    _emitSelected() {
+      const selectedNode = this.selectedId ? this.findNode(this.selectedId) : null;
+      this.eventBus.emit('nodeSelected', selectedNode);
+    }
+
+    _createRootNode() {
+      const rootNode = this._buildNode(null, Config.ROOT_NODE_TITLE);
+      this.nodes[rootNode.id] = rootNode;
+      this.rootId = rootNode.id;
+    }
+
+    _buildNode(parentId, title) {
+      const now = new Date().toISOString();
+      return {
+        id: Utilities.generateId('node'),
+        parentId: parentId,
+        title: title || Config.DEFAULT_NODE_TITLE,
+        content: '',
+        children: [],   // array of child id (bukan object langsung)
+        createdAt: now,
+        updatedAt: now,
+        favorite: false,
+        pinned: false,
+        tags: [],
+        icon: Config.DEFAULT_NODE_ICON,
+        color: null,
+        expanded: true  // state UI, bukan bagian "wajib" dari spesifikasi tapi diperlukan untuk expand/collapse
+      };
+    }
+
+    _collectSubtreeIds(id) {
+      const node = this.findNode(id);
+      if (!node) return [];
+      let ids = [id];
+      node.children.forEach((cid) => {
+        ids = ids.concat(this._collectSubtreeIds(cid));
+      });
+      return ids;
+    }
+
+    _deepCloneNode(node, parentId) {
+      const now = new Date().toISOString();
+      const clone = {
+        id: Utilities.generateId('node'),
+        parentId: parentId,
+        title: node.title + ' (copy)',
+        content: node.content,
+        children: [],
+        createdAt: now,
+        updatedAt: now,
+        favorite: node.favorite,
+        pinned: node.pinned,
+        tags: Utilities.deepClone(node.tags),
+        icon: node.icon,
+        color: node.color,
+        expanded: node.expanded
+      };
+      this.nodes[clone.id] = clone;
+
+      // recursive clone untuk seluruh descendant
+      node.children.forEach((cid) => {
+        const childNode = this.findNode(cid);
+        if (childNode) {
+          const clonedChild = this._deepCloneNode(childNode, clone.id);
+          clone.children.push(clonedChild.id);
+        }
+      });
+
+      return clone;
+    }
+
+    /* ---------------- CRUD NODE ---------------- */
+
+    createNode(parentId, title) {
+      const parent = this.findNode(parentId);
+      if (!parent) {
+        this.logger.warning('createNode: parent tidak ditemukan', { parentId });
+        return null;
+      }
+      const newNode = this._buildNode(parentId, title || Config.DEFAULT_NODE_TITLE);
+      this.nodes[newNode.id] = newNode;
+      parent.children.push(newNode.id);
+      parent.expanded = true; // auto-expand supaya node baru langsung terlihat
+      this.selectedId = newNode.id;
+
+      this.renderTree();
+      this.eventBus.emit('nodeCreated', newNode);
+      this._emitSelected();
+      this.eventBus.emit('treeChanged', { type: 'create', id: newNode.id, parentId });
+      this.logger.info('Node dibuat', { id: newNode.id, parentId });
+
+      return newNode;
+    }
+
+    deleteNode(id) {
+      const node = this.findNode(id);
+      if (!node) return false;
+      if (node.parentId === null) {
+        this.logger.warning('deleteNode: root node tidak boleh dihapus', { id });
+        return false;
+      }
+
+      const idsToDelete = this._collectSubtreeIds(id);
+      const snapshot = { ...node }; // salinan ringan untuk payload event, node aslinya akan dihapus
+      idsToDelete.forEach((nid) => delete this.nodes[nid]);
+
+      const parent = this.findNode(node.parentId);
+      if (parent) {
+        parent.children = parent.children.filter((cid) => cid !== id);
+      }
+
+      // Jika node yang sedang dibuka di editor ikut terhapus (baik itu sendiri
+      // maupun salah satu keturunannya), editor harus otomatis kosong -
+      // bukan otomatis pindah ke root, supaya tidak terkesan "menyimpan" ke node lain.
+      // TreeManager tidak tahu (dan tidak perlu tahu) siapa saja yang mendengarkan
+      // nodeSelected -> cukup emit null, EditorManager yang menanggapi sendiri.
+      let selectionAffected = false;
+      if (idsToDelete.includes(this.selectedId)) {
+        this.selectedId = null;
+        selectionAffected = true;
+      }
+
+      this.renderTree();
+      this.eventBus.emit('nodeDeleted', { id, node: snapshot, descendantIds: idsToDelete });
+      if (selectionAffected) this._emitSelected();
+      this.eventBus.emit('treeChanged', { type: 'delete', id });
+      this.logger.info('Node dihapus', { id, jumlahTerhapus: idsToDelete.length });
+
+      return true;
+    }
+
+    renameNode(id, title) {
+      const node = this.findNode(id);
+      if (!node || !title) return false;
+      node.title = title;
+      node.updatedAt = new Date().toISOString();
+
+      this.renderTree();
+      this.eventBus.emit('nodeUpdated', node);
+      this.eventBus.emit('treeChanged', { type: 'rename', id });
+      this.logger.info('Node di-rename', { id, title });
+
+      return true;
+    }
+
+    moveNode(id, newParentId) {
+      const node = this.findNode(id);
+      const newParent = this.findNode(newParentId);
+      if (!node || !newParent) return false;
+      if (node.parentId === null) {
+        this.logger.warning('moveNode: root node tidak bisa dipindahkan', { id });
+        return false;
+      }
+
+      // cegah node dipindahkan ke dalam subtree-nya sendiri (rekursif tanpa batas level)
+      const subtreeIds = this._collectSubtreeIds(id);
+      if (subtreeIds.includes(newParentId)) {
+        this.logger.warning('moveNode: tidak bisa memindahkan node ke dalam subtree-nya sendiri', { id, newParentId });
+        return false;
+      }
+
+      const oldParentId = node.parentId;
+      const oldParent = this.findNode(oldParentId);
+      if (oldParent) {
+        oldParent.children = oldParent.children.filter((cid) => cid !== id);
+      }
+
+      node.parentId = newParentId;
+      newParent.children.push(id);
+      newParent.expanded = true;
+      node.updatedAt = new Date().toISOString();
+
+      this.renderTree();
+      this.eventBus.emit('nodeMoved', { id, oldParentId, newParentId });
+      this.eventBus.emit('treeChanged', { type: 'move', id });
+      this.logger.info('Node dipindahkan', { id, oldParentId, newParentId });
+
+      return true;
+    }
+
+    duplicateNode(id) {
+      const node = this.findNode(id);
+      if (!node) return null;
+      const parent = this.findNode(node.parentId);
+      if (!parent) {
+        this.logger.warning('duplicateNode: root node tidak bisa diduplikasi', { id });
+        return null;
+      }
+
+      const clone = this._deepCloneNode(node, node.parentId);
+      parent.children.push(clone.id);
+      this.selectedId = clone.id;
+
+      this.renderTree();
+      this.eventBus.emit('nodeCreated', clone);
+      this._emitSelected();
+      this.eventBus.emit('treeChanged', { type: 'duplicate', id: clone.id, sourceId: id });
+      this.logger.info('Node diduplikasi', { sourceId: id, newId: clone.id });
+
+      return clone;
+    }
+
+    findNode(id) {
+      return this.nodes[id] || null;
+    }
+
+    getChildren(id) {
+      const node = this.findNode(id);
+      if (!node) return [];
+      return node.children.map((cid) => this.findNode(cid)).filter(Boolean);
+    }
+
+    /* ---------------- EXPAND / COLLAPSE / SELECT ---------------- */
+
+    expandNode(id) {
+      const node = this.findNode(id);
+      if (!node) return;
+      node.expanded = true;
+      this.renderTree();
+    }
+
+    collapseNode(id) {
+      const node = this.findNode(id);
+      if (!node) return;
+      node.expanded = false;
+      this.renderTree();
+    }
+
+    toggleExpand(id) {
+      const node = this.findNode(id);
+      if (!node) return;
+      node.expanded = !node.expanded;
+      this.renderTree();
+    }
+
+    selectNode(id) {
+      const node = this.findNode(id);
+      if (!node) return;
+      this.selectedId = id;
+      this.renderTree();
+      this._emitSelected();
+    }
+
+    /* ---------------- RENDERING ---------------- */
+
+    renderTree() {
+      if (!this.containerEl) return;
+      this.containerEl.innerHTML = '';
+
+      const rootNode = this.findNode(this.rootId);
+      if (!rootNode) {
+        this.containerEl.classList.add('is-empty');
+        this.containerEl.textContent = 'Tree kosong.';
+        return;
+      }
+
+      this.containerEl.classList.remove('is-empty');
+      const rootList = document.createElement('ul');
+      rootList.className = 'tree-list tree-root-list';
+      rootList.appendChild(this._renderNodeEl(rootNode, 0));
+      this.containerEl.appendChild(rootList);
+    }
+
+    // Rekursif tanpa batas level: setiap node merender children-nya sendiri.
+    _renderNodeEl(node, level) {
+      const li = document.createElement('li');
+      li.className = 'tree-node';
+      li.dataset.id = node.id;
+
+      const row = document.createElement('div');
+      row.className = 'tree-node-row';
+      if (node.id === this.selectedId) row.classList.add('selected');
+      row.style.paddingLeft = (level * 16) + 'px';
+
+      const hasChildren = node.children.length > 0;
+
+      const toggleEl = document.createElement('span');
+      toggleEl.className = 'tree-toggle';
+      toggleEl.dataset.action = 'toggle';
+      toggleEl.dataset.id = node.id;
+      toggleEl.textContent = hasChildren ? (node.expanded ? '▾' : '▸') : '·';
+      row.appendChild(toggleEl);
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'tree-node-label';
+      labelEl.dataset.action = 'select';
+      labelEl.dataset.id = node.id;
+      labelEl.textContent = `${node.icon || '📄'} ${node.title}`;
+      row.appendChild(labelEl);
+
+      const actionsEl = document.createElement('span');
+      actionsEl.className = 'tree-node-actions';
+      actionsEl.appendChild(this._makeActionBtn('add', node.id, '+', 'Tambah child'));
+      actionsEl.appendChild(this._makeActionBtn('rename', node.id, '✎', 'Rename'));
+      if (node.parentId !== null) {
+        actionsEl.appendChild(this._makeActionBtn('delete', node.id, '✕', 'Hapus'));
+      }
+      row.appendChild(actionsEl);
+
+      li.appendChild(row);
+
+      if (hasChildren && node.expanded) {
+        const childList = document.createElement('ul');
+        childList.className = 'tree-list';
+        node.children.forEach((cid) => {
+          const childNode = this.findNode(cid);
+          if (childNode) childList.appendChild(this._renderNodeEl(childNode, level + 1));
+        });
+        li.appendChild(childList);
+      }
+
+      return li;
+    }
+
+    _makeActionBtn(action, id, label, title) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tree-action-btn';
+      btn.dataset.action = action;
+      btn.dataset.id = id;
+      btn.textContent = label;
+      btn.title = title;
+      return btn;
+    }
+
+    /* ---------------- EVENTS (delegation) ---------------- */
+
+    _bindEvents() {
+      // Satu listener untuk seluruh tree, bukan per-node -> tetap ringan
+      // meskipun jumlah node bertambah banyak.
+      this.containerEl.addEventListener('click', async (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = target.dataset.id;
+
+        switch (action) {
+          case 'toggle':
+            this.toggleExpand(id);
+            break;
+
+          case 'select':
+            this.selectNode(id);
+            break;
+
+          case 'add': {
+            const title = await this.modal.showPrompt({
+              title: 'Tambah Node Baru',
+              message: 'Node baru akan dibuat sebagai child dari node ini.',
+              defaultValue: 'Node Baru',
+              confirmLabel: 'Tambah'
+            });
+            if (title !== null && title.trim() !== '') {
+              this.createNode(id, title.trim());
+            }
+            break;
+          }
+
+          case 'rename': {
+            const node = this.findNode(id);
+            const newTitle = await this.modal.showPrompt({
+              title: 'Rename Node',
+              defaultValue: node ? node.title : '',
+              confirmLabel: 'Simpan'
+            });
+            if (newTitle !== null && newTitle.trim() !== '') {
+              this.renameNode(id, newTitle.trim());
+            }
+            break;
+          }
+
+          case 'delete': {
+            const node = this.findNode(id);
+            const ok = await this.modal.showConfirm({
+              title: 'Hapus Node',
+              message: `Hapus node "${node ? node.title : id}" beserta seluruh child-nya? Tindakan ini tidak bisa dibatalkan.`,
+              confirmLabel: 'Hapus',
+              danger: true
+            });
+            if (ok) this.deleteNode(id);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------
+     EditorManager
+     Tanggung jawab: mengelola area editor utama
+     (konten, mode edit, sinkronisasi dengan tree/storage).
+     ------------------------------------------------------------ */
+  class EditorManager {
+    constructor(storageManager, eventBus, logger) {
+      this.storage = storageManager;
+      this.eventBus = eventBus;
+      this.logger = logger;
+
+      // Referensi LANGSUNG ke object node di memori (bukan salinan),
+      // supaya perubahan di editor otomatis merefleksikan ke data TreeManager.
+      this.currentNode = null;
+
+      this.debounceTimer = null;
+      this.debounceDelay = Config.AUTOSAVE_DELAY; // sesuai spesifikasi auto-save, sumber tunggal: Config
+
+      // Cache elemen DOM sekali di awal -> hindari querySelector berulang saat mengetik.
+      this.placeholderEl = document.getElementById('editor-placeholder');
+      this.activeEl = document.getElementById('editor-active');
+      this.titleEl = document.getElementById('editor-title');
+      this.textareaEl = document.getElementById('editor-textarea');
+      this.statusEl = document.getElementById('editor-status');
+      this.charCountEl = document.getElementById('editor-char-count');
+      this.wordCountEl = document.getElementById('editor-word-count');
+      this.updatedAtEl = document.getElementById('editor-updated-at');
+    }
+
+    init() {
+      this.textareaEl.addEventListener('input', () => this._onInput());
+      this._renderEmptyState();
+
+      // Mulai tahap ini EditorManager TIDAK dipanggil langsung oleh TreeManager.
+      // Ia mendengarkan sendiri lewat EventBus - TreeManager tidak perlu (dan
+      // tidak boleh) tahu bahwa EditorManager ini ada.
+      this.eventBus.on('nodeSelected', (node) => this.loadNode(node));
+      this.logger.debug('EditorManager mendengarkan event nodeSelected');
+
+      // BUG FIX (pelengkap beforeunload): kalau user berhenti mengetik <300ms
+      // sebelum menutup tab/browser, debounce _onInput() di bawah belum sempat
+      // memanggil _commitToMemory() sama sekali - StorageManager.save() yang
+      // dipanggil saat beforeunload tidak akan melihat karakter terakhir itu.
+      // StorageManager meng-emit 'appBeforeUnload' TEPAT SEBELUM ia flush
+      // (lihat StorageManager._bindUnloadHandler) - di sini kita commit paksa
+      // dulu supaya perubahan terakhir ikut ke pendingWrites sebelum di-flush.
+      this.eventBus.on('appBeforeUnload', () => {
+        clearTimeout(this.debounceTimer);
+        this._commitToMemory();
+      });
+    }
+
+    /**
+     * Dipanggil otomatis setiap kali EventBus mengirim event 'nodeSelected'
+     * (lihat init() di atas). TreeManager hanya mengirim node (atau null) -
+     * seluruh logika render/isi editor sepenuhnya ditangani di sini.
+     */
+    loadNode(node) {
+      // Ganti node aktif -> pastikan tidak ada auto-save tertunda
+      // dari node sebelumnya yang "nyasar" menimpa node baru ini.
+      clearTimeout(this.debounceTimer);
+
+      this.currentNode = node || null;
+
+      if (!this.currentNode) {
+        this._renderEmptyState();
+        this.logger.debug('EditorManager: tidak ada node terpilih, tampilkan empty state');
+        return;
+      }
+
+      this._renderActiveState();
+      this.logger.debug('EditorManager: node dimuat ke editor', { id: this.currentNode.id });
+    }
+
+    /**
+     * Dipanggil ketika node yang sedang terbuka di editor dihapus dari tree.
+     * (Dalam praktiknya TreeManager sudah memanggil loadNode(null) via
+     * _syncEditor(), method ini disediakan sebagai API eksplisit yang
+     * lebih mudah dibaca maksudnya di titik lain jika dibutuhkan.)
+     */
+    clear() {
+      this.loadNode(null);
+    }
+
+    /* ---------------- RENDER STATE ---------------- */
+
+    _renderEmptyState() {
+      this.placeholderEl.classList.remove('hidden');
+      this.activeEl.classList.add('hidden');
+    }
+
+    _renderActiveState() {
+      this.placeholderEl.classList.add('hidden');
+      this.activeEl.classList.remove('hidden');
+
+      this.titleEl.textContent = this.currentNode.title;
+      this.textareaEl.value = this.currentNode.content || '';
+
+      this._updateStats();
+      this._setStatus('Tersimpan di memori');
+    }
+
+    /* ---------------- AUTO-SAVE (debounce 300ms) ---------------- */
+
+    _onInput() {
+      // Statistik & status "mengetik" diupdate langsung (murah secara komputasi),
+      // hanya commit ke object node yang di-debounce supaya tidak berlebihan
+      // menulis ke memori saat mengetik cepat/panjang.
+      this._updateStats();
+      this._setStatus('Mengetik...');
+
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = setTimeout(() => {
+        this._commitToMemory();
+      }, this.debounceDelay);
+    }
+
+    _commitToMemory() {
+      if (!this.currentNode) return;
+
+      this.currentNode.content = this.textareaEl.value;
+      this.currentNode.updatedAt = new Date().toISOString();
+
+      // BUG FIX PALING KRITIS: baris emit di bawah ini SEBELUMNYA TIDAK ADA.
+      // this.currentNode adalah referensi LANGSUNG ke object di Memory Cache
+      // (this.storage.cache.nodes), jadi baris di atas MEMANG sudah mengubah
+      // Memory Cache - tapi StorageManager TIDAK PERNAH memantau object itu
+      // secara langsung, ia hanya bereaksi lewat EventBus (lihat komentar di
+      // atas class StorageManager). Tanpa emit ini, StorageManager tidak
+      // pernah tahu konten berubah -> tidak pernah masuk pendingWrites ->
+      // tidak pernah di-flush ke IndexedDB -> hilang setiap kali refresh/tutup
+      // browser, walaupun status di footer (yang dikontrol StorageManager,
+      // BUKAN this.statusEl di bawah yang cuma teks kosmetik lokal editor)
+      // tidak pernah sempat berpindah ke 'saving' sama sekali untuk perubahan
+      // ini. Inilah akar dari 3 bug: catatan tidak tersimpan, auto-save tidak
+      // berjalan, dan status Saved/Saving yang tidak mencerminkan kondisi asli.
+      this.eventBus.emit('nodeUpdated', this.currentNode);
+      this.logger.debug('EditorManager: commit konten ke Memory Cache + emit nodeUpdated ke StorageManager', {
+        id: this.currentNode.id,
+        panjangKonten: this.currentNode.content.length
+      });
+
+      this._updateStats();
+      this._setStatus('Tersimpan di memori');
+    }
+
+    /* ---------------- STATISTIK ---------------- */
+
+    _updateStats() {
+      const text = this.textareaEl.value;
+      // Dipindahkan ke Utilities: logika yang sama persis sebelumnya juga
+      // dipakai TreeManager/manager lain, jadi tidak ditulis ulang di sini.
+      const charCount = Utilities.characterCount(text);
+      const wordCount = Utilities.wordCount(text);
+
+      this.charCountEl.textContent = `${charCount} karakter`;
+      this.wordCountEl.textContent = `${wordCount} kata`;
+
+      if (this.currentNode) {
+        this.updatedAtEl.textContent = `Terakhir diedit: ${Utilities.formatDate(this.currentNode.updatedAt)}`;
+      }
+    }
+
+    _setStatus(text) {
+      this.statusEl.textContent = text;
+    }
+  }
+
+  /* ------------------------------------------------------------
+     AIManager
+     Tanggung jawab: logika panel AI (interaksi, saran, dsb).
+     Tidak menggunakan API eksternal - seluruh logika lokal.
+     ------------------------------------------------------------ */
+  class AIManager {
+    constructor(eventBus, logger) {
+      this.eventBus = eventBus;
+      this.logger = logger;
+      this.isReady = false;
+    }
+
+    init() {
+      // TODO: inisialisasi logika AI lokal
+    }
+  }
+
+  /* ------------------------------------------------------------
+     SearchManager
+     Tanggung jawab: pencarian dalam tree/editor/data lokal.
+     ------------------------------------------------------------ */
+  class SearchManager {
+    constructor(storageManager, eventBus, logger) {
+      this.storage = storageManager;
+      this.eventBus = eventBus;
+      this.logger = logger;
+    }
+
+    init() {
+      // TODO: inisialisasi indeks pencarian
+    }
+
+    search(query) {
+      // TODO: implementasi pencarian
+    }
+  }
+
+  /* ------------------------------------------------------------
+     SettingsManager
+     Tanggung jawab: preferensi pengguna (tema, layout, dsb),
+     disimpan secara lokal.
+     ------------------------------------------------------------ */
+  class SettingsManager {
+    constructor(storageManager, logger) {
+      this.storage = storageManager;
+      this.logger = logger;
+      this.settings = {};
+    }
+
+    init() {
+      // TODO: muat pengaturan dari storage
+    }
+
+    save() {
+      // TODO: simpan pengaturan ke storage
+    }
+  }
+
+  /* ------------------------------------------------------------
+     UIManager
+     Tanggung jawab: interaksi UI umum yang tidak spesifik
+     ke satu domain (toggle sidebar/AI panel, responsif, dsb).
+     ------------------------------------------------------------ */
+  class UIManager {
+    constructor(logger) {
+      this.logger = logger;
+      this.sidebarEl = document.getElementById('sidebar');
+      this.aiPanelEl = document.getElementById('ai-panel');
+      this.btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+      this.btnToggleAI = document.getElementById('btn-toggle-ai');
+    }
+
+    init() {
+      // Toggle sidebar (khususnya untuk tampilan mobile)
+      this.btnToggleSidebar.addEventListener('click', () => {
+        this.sidebarEl.classList.toggle('open');
+      });
+
+      // Toggle AI panel (khususnya untuk tampilan mobile)
+      this.btnToggleAI.addEventListener('click', () => {
+        this.aiPanelEl.classList.toggle('open');
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------
+     App
+     Tanggung jawab: entry point utama, menginisialisasi
+     seluruh manager dan menghubungkan dependensi antar-modul.
+     ------------------------------------------------------------ */
+  class App {
+    constructor() {
+      // EventBus & Logger dibuat PALING AWAL: keduanya adalah "tulang punggung"
+      // komunikasi & observability, jadi seluruh manager lain butuh referensi ini
+      // sejak konstruksi, bukan belakangan.
+      this.eventBus = new EventBus();
+      this.logger = new Logger();
+
+      this.storageManager = new StorageManager(this.logger, this.eventBus);
+      this.modalManager = new ModalManager(this.logger);
+
+      // EditorManager tidak lagi menerima TreeManager (atau sebaliknya) secara
+      // langsung. Ia hanya menerima EventBus, lalu mendaftar sendiri ke event
+      // 'nodeSelected' di dalam init()-nya sendiri.
+      this.editorManager = new EditorManager(this.storageManager, this.eventBus, this.logger);
+      this.uiManager = new UIManager(this.logger);
+
+      // TreeManager HANYA bergantung pada storage, modal, eventBus, dan logger.
+      // Ia tidak lagi menerima referensi EditorManager sama sekali -> tidak tahu
+      // (dan tidak perlu tahu) siapa saja yang mendengarkan event yang ia emit.
+      this.treeManager = new TreeManager(this.storageManager, this.modalManager, this.eventBus, this.logger);
+
+      this.aiManager = new AIManager(this.eventBus, this.logger);
+      this.searchManager = new SearchManager(this.storageManager, this.eventBus, this.logger);
+      this.settingsManager = new SettingsManager(this.storageManager, this.logger);
+    }
+
+    async init() {
+      // Urutan inisialisasi WAJIB seperti ini:
+      //
+      // 1) await storageManager.initialize() - HARUS selesai duluan (Memory
+      //    Cache terisi dari IndexedDB) SEBELUM TreeManager.init() membaca
+      //    this.rootId/this.nodes - kalau tidak, TreeManager akan mengira
+      //    Memory Cache kosong dan membuat root baru padahal data lama
+      //    sebenarnya masih ada di IndexedDB.
+      //
+      // 2) editorManager.init() HARUS dipanggil SEBELUM treeManager.init().
+      //    Ini terlihat berlawanan dengan urutan "TreeManager -> EditorManager"
+      //    yang intuitif, tapi WAJIB dalam urutan ini karena arsitektur
+      //    EventBus: editorManager.init() hanya MENDAFTARKAN listener untuk
+      //    event 'nodeSelected' (belum menampilkan apa pun), sedangkan
+      //    treeManager.init() langsung meng-emit event 'nodeSelected' pertama
+      //    kali di baris terakhirnya (lewat _emitSelected(), memilih root atau
+      //    node terakhir yang tersimpan). EventBus.emit() bersifat SINKRON dan
+      //    TIDAK mengantre event untuk listener yang belum ada saat itu -
+      //    kalau treeManager.init() dipanggil LEBIH DULU, event 'nodeSelected'
+      //    pertama itu akan hilang begitu saja (tidak ada yang mendengarkan),
+      //    dan editor akan tetap menampilkan empty state meskipun sebenarnya
+      //    ada node yang terpilih. Urutan di bawah ini SUDAH BENAR - jangan
+      //    ditukar hanya karena terlihat lebih "alami" dibaca dari atas ke bawah.
+      await this.storageManager.initialize();
+
+      this.modalManager.init();
+      this.editorManager.init();   // (2) daftar listener 'nodeSelected' dulu
+      this.uiManager.init();
+      this.treeManager.init();     // (3) baru emit 'nodeSelected' pertama kali
+      this.aiManager.init();
+      this.searchManager.init();
+      this.settingsManager.init();
+
+      this.logger.info('ALT3 App initialized (StorageManager + IndexedDB aktif).');
+    }
+  }
+
+  /* ------------------------------------------------------------
+     Bootstrap aplikasi setelah DOM siap
+     ------------------------------------------------------------ */
+  document.addEventListener('DOMContentLoaded', () => {
+    const app = new App();
+    app.init();
+  });
+</script>
+
+</body>
+</html>
